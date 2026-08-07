@@ -21,3 +21,7 @@ jobs:
         run: uv run pytest -q
       - name: Simulate meeting
         run: uv run python -m meeting_core.demo.simulate_meeting
+      - name: Eval harness
+        run: uv run python -m meeting_core.eval.harness
+      - name: MCP list
+        run: uv run python -m meeting_mcp --list

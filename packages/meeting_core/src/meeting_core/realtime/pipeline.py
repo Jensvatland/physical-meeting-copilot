@@ -1,4 +1,4 @@
-"""Realtime ingest pipeline: audio → VAD → ASR adapter → Meeting Core."""
+"""Realtime ingest pipeline: audio → VAD → diarization → ASR → Meeting Core."""
 
 from __future__ import annotations
 
@@ -6,7 +6,8 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from meeting_core.adapters.asr.sim import SimulatedSpeechRecognitionAdapter
-from meeting_core.adapters.base import SpeechRecognitionAdapter, TranslationAdapter
+from meeting_core.adapters.base import DiarizationAdapter, SpeechRecognitionAdapter, TranslationAdapter
+from meeting_core.adapters.diarization.sim import SimulatedDiarizationAdapter
 from meeting_core.adapters.translation.sim import SimulatedTranslationAdapter
 from meeting_core.domain.models import MeetingEvent
 from meeting_core.realtime.vad import EnergyVad, VadResult
@@ -19,6 +20,7 @@ class PipelineMetrics:
     active_chunks: int = 0
     transcripts: int = 0
     last_latency_ms: float | None = None
+    last_speaker_id: str | None = None
 
 
 @dataclass
@@ -26,8 +28,9 @@ class RealtimeIngestPipeline:
     session: MeetingSession
     asr: SpeechRecognitionAdapter = field(default_factory=SimulatedSpeechRecognitionAdapter)
     translator: TranslationAdapter = field(default_factory=SimulatedTranslationAdapter)
+    diarizer: DiarizationAdapter = field(default_factory=SimulatedDiarizationAdapter)
     vad: EnergyVad = field(default_factory=EnergyVad)
-    speaker_id: str = "spk_room"
+    speaker_id: str | None = None
     language_hint: str | None = "zh-CN"
     target_language: str = "en"
     metrics: PipelineMetrics = field(default_factory=PipelineMetrics)
@@ -36,14 +39,33 @@ class RealtimeIngestPipeline:
         self.metrics.chunks += 1
         vad = self.vad.process(pcm, timestamp_ms=timestamp_ms)
         event = self._emit_activity(vad)
-        result: dict[str, Any] = {"vad": vad, "activity_event_id": event.event_id, "transcript": None}
+        diar = await self.diarizer.label(pcm)
+        speaker_id = self.speaker_id or str(diar.get("speaker_id") or "spk_1")
+        if diar.get("active"):
+            self.session.ensure_speaker(speaker_id)
+            if self.metrics.last_speaker_id and self.metrics.last_speaker_id != speaker_id:
+                self.session._emit(  # noqa: SLF001
+                    "speaker.turn",
+                    speaker_id=speaker_id,
+                    source=self.diarizer.capabilities().name,
+                    payload={"from": self.metrics.last_speaker_id, "to": speaker_id},
+                )
+            self.metrics.last_speaker_id = speaker_id
+
+        result: dict[str, Any] = {
+            "vad": vad,
+            "activity_event_id": event.event_id,
+            "diarization": diar,
+            "speaker_id": speaker_id,
+            "transcript": None,
+        }
         if not vad.active:
             return result
         self.metrics.active_chunks += 1
         asr_out = await self.asr.transcribe_stream(pcm, language_hint=self.language_hint)
         segment = self.session.add_transcript(
             asr_out.get("text", ""),
-            speaker_id=self.speaker_id,
+            speaker_id=speaker_id,
             language=asr_out.get("language") or self.language_hint,
             is_final=bool(asr_out.get("is_final", True)),
             confidence=asr_out.get("confidence"),
@@ -68,7 +90,7 @@ class RealtimeIngestPipeline:
                 translated_text=mt["translated_text"],
                 source_language=lang,
                 target_language=self.target_language,
-                speaker_id=self.speaker_id,
+                speaker_id=speaker_id,
                 source=self.translator.capabilities().name,
                 provenance={"adapter": self.translator.capabilities().name},
             )

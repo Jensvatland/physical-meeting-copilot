@@ -4,7 +4,7 @@ Open-source, provider-independent runtime for AI-assisted physical face-to-face 
 
 > **The meeting runtime listens; the user’s personal AI understands.**
 
-Reference brains: [Hermes](https://github.com/) and OpenClaw. Clients progress: browser/macOS prototype → iPhone → iPad.
+Reference brains: Hermes and OpenClaw. Clients progress: browser/macOS prototype → iPhone → iPad.
 
 ## What this is
 
@@ -17,26 +17,45 @@ A Meeting Core that captures room audio, transcribes (Mandarin + English), diari
 uv sync
 uv run pytest
 uv run ruff check .
+uv run python -m meeting_core.eval.harness
 ```
 
-Simulate a multi-speaker meeting (Phase 1 acceptance):
+Simulate a multi-speaker meeting (Hermes research slice included):
 
 ```bash
 uv run python -m meeting_core.demo.simulate_meeting
 ```
 
-Start the Phase 2 browser capture gateway:
+Start the browser capture gateway (shares `MEETING_CORE_DB` with MCP):
 
 ```bash
+export MEETING_CORE_DB=~/.physical-meeting-copilot/meetings.db
 uv run meeting-gateway
 # open http://127.0.0.1:8787 — allow mic — Start meeting
+```
+
+Run the Meeting MCP server (stdio) for Hermes/OpenClaw:
+
+```bash
+export MEETING_CORE_DB=~/.physical-meeting-copilot/meetings.db
+uv run python -m meeting_mcp
+# or: uv run meeting-mcp
+```
+
+Docker (self-host):
+
+```bash
+docker compose up --build
+# China / global overlays:
+# docker compose -f docker-compose.yml -f docker-compose.china.yml up --build
+# docker compose -f docker-compose.yml -f docker-compose.global.yml up --build
 ```
 
 ## Architecture (summary)
 
 ```text
-PHYSICAL MEETING → Capture → Realtime media (LiveKit preferred)
-  → Meeting Core (events, transcript, claims, alerts)
+PHYSICAL MEETING → Capture → Realtime media (LiveKit preferred / WebSocket slice)
+  → Meeting Core (events, transcript, claims, research, alerts)
   → Realtime UI  |  Meeting MCP → Hermes / OpenClaw / other agents
 ```
 
@@ -66,7 +85,7 @@ See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 ## Status
 
-Phases 0–1 complete; MCP façade + Hermes/OpenClaw stubs in place. Next: Phase 2 live audio (LiveKit). See [docs/ROADMAP.md](docs/ROADMAP.md).
+Runtime foundation (phases 0–22) is in place with sim adapters where production ML/providers are optional. Next focus: real FunASR/LiveKit/Qwen adapters, richer eval noise suites, and iOS clients (phases 30+). See [docs/ROADMAP.md](docs/ROADMAP.md).
 
 ## License
 

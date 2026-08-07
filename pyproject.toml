@@ -31,7 +31,12 @@ dev = [
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["packages/meeting_core/tests", "packages/mcp_server/tests", "packages/gateway/tests"]
-pythonpath = ["packages/meeting_core/src", "packages/mcp_server/src", "packages/gateway/src"]
+pythonpath = [
+  "packages/meeting_core/src",
+  "packages/mcp_server/src",
+  "packages/gateway/src",
+  "integrations",
+]
 
 [tool.ruff]
 line-length = 120

@@ -46,6 +46,11 @@ All events share:
 | `finding.published` | Agent finding with evidence |
 | `alert.pushed` | Private/user alert |
 | `private_speech.queued` / `private_speech.spoken` | Private TTS lifecycle |
+| `meeting.pre_context_set` | Pre-meeting agenda/goals/facts |
+| `meeting.consent_recorded` | Consent flag recorded |
+| `meeting.exported` | Post-meeting package produced |
+| `primitive.detected` | Number / deadline / price / risk primitive |
+| `privacy.biometrics_cleared` | Biometric consent cleared |
 
 ## Claim states
 
@@ -72,10 +77,14 @@ Never overwrite original statements; retain provenance.
 | `meeting://sessions/{id}/questions` | Questions |
 | `meeting://sessions/{id}/findings` | Findings |
 | `meeting://sessions/{id}/alerts` | Alerts |
+| `meeting://sessions/{id}/research` | Research jobs |
+| `meeting://sessions/{id}/primitives` | Intelligence primitives |
+| `meeting://sessions/{id}/pre_meeting` | Pre-meeting context |
+| `meeting://sessions/{id}/export` | Post-meeting package |
 
 ## MCP tools
 
-`meeting.start_session`, `meeting.stop_session`, `meeting.get_live_state`, `meeting.get_recent_context`, `meeting.search_transcript`, `meeting.list_speakers`, `meeting.assign_speaker`, `meeting.update_participant`, `meeting.create_claim`, `meeting.update_claim`, `meeting.record_commitment`, `meeting.record_decision`, `meeting.record_question`, `meeting.publish_finding`, `meeting.push_private_alert`, `meeting.speak_private`, `meeting.set_mode`, `meeting.set_language`, `meeting.set_alert_threshold`.
+`meeting.start_session`, `meeting.stop_session`, `meeting.get_live_state`, `meeting.get_recent_context`, `meeting.search_transcript`, `meeting.list_speakers`, `meeting.assign_speaker`, `meeting.update_participant`, `meeting.create_claim`, `meeting.update_claim`, `meeting.compare_claim`, `meeting.record_commitment`, `meeting.record_decision`, `meeting.record_question`, `meeting.publish_finding`, `meeting.push_private_alert`, `meeting.speak_private`, `meeting.set_mode`, `meeting.set_language`, `meeting.set_alert_threshold`, `meeting.set_pre_meeting_context`, `meeting.start_research`, `meeting.complete_research`, `meeting.export_package`, `meeting.list_sessions`, `meeting.search_sessions`, `meeting.delete_session`, `meeting.record_consent`.
 
 ## Transport rules
 

@@ -9,16 +9,16 @@ China is a **first-class** profile, not a fork.
 - Local or in-country ASR, diarization, LLM, and TTS paths
 - Same Meeting Core + protocol as the global profile
 
-## Planned stack (Phase 11 / 40)
+## Stack (Phase 11 / 40)
 
-| Concern | Candidate |
-|---------|-----------|
-| Realtime transport | Self-hosted LiveKit |
-| ASR | FunASR / SenseVoice |
-| Diarization | 3D-Speaker (and/or local pyannote where license OK) |
-| LLM / translation assist | Qwen-compatible OpenAI-style endpoints |
-| TTS (private alerts) | Local / China-region TTS adapter |
-| Compose | `docker-compose.china.yml` |
+| Concern | Candidate | Status |
+|---------|-----------|--------|
+| Realtime transport | Self-hosted LiveKit / WebSocket slice | WebSocket done; LiveKit stub |
+| ASR | FunASR / SenseVoice | FunASR stub + sim ASR |
+| Diarization | 3D-Speaker (and/or local pyannote where license OK) | Sim diarization |
+| LLM / translation assist | Qwen-compatible OpenAI-style endpoints | Glossary sim |
+| TTS (private alerts) | Local / China-region TTS adapter | Sim TTS lifecycle |
+| Compose | `docker-compose.china.yml` | **done** |
 
 ## Rules
 
