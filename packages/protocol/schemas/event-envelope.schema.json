@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://physical-meeting-copilot.local/schemas/event-envelope.schema.json",
+  "title": "MeetingEventEnvelope",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "event_id",
+    "protocol_version",
+    "session_id",
+    "timestamp",
+    "type",
+    "source"
+  ],
+  "properties": {
+    "event_id": { "type": "string", "format": "uuid" },
+    "protocol_version": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$" },
+    "session_id": { "type": "string", "format": "uuid" },
+    "timestamp": { "type": "string", "format": "date-time" },
+    "type": { "type": "string", "minLength": 1 },
+    "source": { "type": "string", "minLength": 1 },
+    "confidence": { "type": ["number", "null"], "minimum": 0, "maximum": 1 },
+    "speaker_id": { "type": ["string", "null"] },
+    "participant_id": { "type": ["string", "null"] },
+    "language": { "type": ["string", "null"] },
+    "text": { "type": ["string", "null"] },
+    "provenance": { "type": ["object", "null"] },
+    "correlation_id": { "type": ["string", "null"] },
+    "payload": { "type": "object" }
+  }
+}

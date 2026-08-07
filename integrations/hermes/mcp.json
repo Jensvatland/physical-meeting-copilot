@@ -1,0 +1,18 @@
+{
+  "mcpServers": {
+    "physical-meeting-copilot": {
+      "command": "uv",
+      "args": [
+        "run",
+        "--directory",
+        "../..",
+        "python",
+        "-m",
+        "meeting_mcp"
+      ],
+      "env": {
+        "MEETING_CORE_DB": "~/.physical-meeting-copilot/meetings.db"
+      }
+    }
+  }
+}

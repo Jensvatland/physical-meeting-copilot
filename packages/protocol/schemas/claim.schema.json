@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://physical-meeting-copilot.local/schemas/claim.schema.json",
+  "title": "Claim",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["claim_id", "session_id", "statement", "state", "created_at"],
+  "properties": {
+    "claim_id": { "type": "string", "format": "uuid" },
+    "session_id": { "type": "string", "format": "uuid" },
+    "statement": { "type": "string", "minLength": 1 },
+    "original_text": { "type": "string" },
+    "state": {
+      "type": "string",
+      "enum": [
+        "UNVERIFIED",
+        "SUPPORTED_PROJECT_SOURCE",
+        "SUPPORTED_EXTERNAL_SOURCE",
+        "CONTRADICTED_PROJECT_SOURCE",
+        "CONTRADICTED_EXTERNAL_SOURCE",
+        "CONFLICTING_EVIDENCE",
+        "INSUFFICIENT_INFORMATION"
+      ]
+    },
+    "speaker_id": { "type": "string" },
+    "participant_id": { "type": "string" },
+    "evidence": { "type": "array", "items": { "type": "object" } },
+    "provenance": { "type": "object" },
+    "created_at": { "type": "string", "format": "date-time" },
+    "updated_at": { "type": "string", "format": "date-time" }
+  }
+}
