@@ -6,7 +6,8 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from meeting_core.adapters.asr.sim import SimulatedSpeechRecognitionAdapter
-from meeting_core.adapters.base import SpeechRecognitionAdapter
+from meeting_core.adapters.base import SpeechRecognitionAdapter, TranslationAdapter
+from meeting_core.adapters.translation.sim import SimulatedTranslationAdapter
 from meeting_core.domain.models import MeetingEvent
 from meeting_core.realtime.vad import EnergyVad, VadResult
 from meeting_core.session import MeetingSession
@@ -24,9 +25,11 @@ class PipelineMetrics:
 class RealtimeIngestPipeline:
     session: MeetingSession
     asr: SpeechRecognitionAdapter = field(default_factory=SimulatedSpeechRecognitionAdapter)
+    translator: TranslationAdapter = field(default_factory=SimulatedTranslationAdapter)
     vad: EnergyVad = field(default_factory=EnergyVad)
     speaker_id: str = "spk_room"
     language_hint: str | None = "zh-CN"
+    target_language: str = "en"
     metrics: PipelineMetrics = field(default_factory=PipelineMetrics)
 
     async def on_audio(self, pcm: bytes, *, timestamp_ms: int) -> dict[str, Any]:
@@ -52,6 +55,24 @@ class RealtimeIngestPipeline:
         self.metrics.transcripts += 1
         self.metrics.last_latency_ms = 0.0
         result["transcript"] = segment.model_dump(mode="json")
+        lang = segment.language or self.language_hint or ""
+        if lang.startswith("zh") and self.target_language.startswith("en") and segment.text:
+            mt = await self.translator.translate(
+                segment.text,
+                source_language=lang,
+                target_language=self.target_language,
+            )
+            tr = self.session.add_translation(
+                source_segment_id=segment.segment_id,
+                original_text=segment.text,
+                translated_text=mt["translated_text"],
+                source_language=lang,
+                target_language=self.target_language,
+                speaker_id=self.speaker_id,
+                source=self.translator.capabilities().name,
+                provenance={"adapter": self.translator.capabilities().name},
+            )
+            result["translation"] = tr.model_dump(mode="json")
         return result
 
     def _emit_activity(self, vad: VadResult) -> MeetingEvent:

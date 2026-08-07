@@ -147,7 +147,10 @@
           if (msg.type === "ingest" && msg.transcript) {
             const div = document.createElement("div");
             div.className = "seg";
-            div.innerHTML = `<div class="meta">${msg.transcript.language || ""} · ${msg.timestamp_ms}ms · rms ${Math.round(msg.rms)}</div>${msg.transcript.text}`;
+            const tr = msg.translation
+              ? `<div style="color:var(--accent);margin-top:0.25rem">${msg.translation.translated_text}</div>`
+              : "";
+            div.innerHTML = `<div class="meta">${msg.transcript.language || ""} · ${msg.timestamp_ms}ms · rms ${Math.round(msg.rms)}</div>${msg.transcript.text}${tr}`;
             feedEl.prepend(div);
           }
           if (msg.type === "ready") setStatus(`Live · session ${sessionId.slice(0, 8)}`);

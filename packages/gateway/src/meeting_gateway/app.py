@@ -116,6 +116,7 @@ def _public_result(result: dict[str, Any]) -> dict[str, Any]:
         "rms": vad.rms,
         "timestamp_ms": vad.timestamp_ms,
         "transcript": result.get("transcript"),
+        "translation": result.get("translation"),
     }
 
 
