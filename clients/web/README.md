@@ -1,10 +1,17 @@
-# Browser client (Phase 6)
+# Browser client
 
-Placeholder for the realtime UI: transcript, translation, speakers, alerts, research status, suggested questions, Ask Agent, People.
+Phase 2 vertical slice lives in `public/index.html`.
 
-Will connect to:
+## Run
 
-- Realtime plane: LiveKit / WebSocket (audio + deltas)
-- Agent plane: Meeting MCP resources/tools
+```bash
+uv run meeting-gateway
+```
 
-Do not put provider SDKs into Meeting Core from this client.
+Open `http://127.0.0.1:8787`. The page captures microphone PCM, downsamples to 16 kHz, and streams base64 frames over WebSocket to Meeting Core.
+
+## Notes
+
+- LiveKit remains the preferred production realtime transport.
+- This WebSocket path exists so local demos work without cloud credentials.
+- Phase 6 expands the full Copilot UI (alerts, People, Ask Agent, research).

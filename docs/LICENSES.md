@@ -14,6 +14,9 @@ Review this file before adding dependencies. Prefer permissive licenses (Apache-
 | pytest | MIT | Tests |
 | ruff | MIT | Lint |
 | mcp (Python SDK) | MIT | MCP server (Phase 7+) — verify version on add |
+| starlette | BSD-3-Clause | Realtime gateway |
+| uvicorn | BSD-3-Clause | ASGI server |
+| websockets | BSD-3-Clause | WS client/server support |
 
 ## Planned adapters (not yet vendored)
 

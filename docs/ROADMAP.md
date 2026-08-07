@@ -8,6 +8,7 @@ Phases are complete only when code, tests, docs, fallbacks, license notes, and a
 |------:|------|--------|
 | 0 | Repository / architecture | **done** |
 | 1 | Meeting Core | **done** |
+| 2 | Live audio (WebSocket vertical slice) | **partial** (PCM ingest + VAD + sim ASR; LiveKit SDK pending) |
 | 7 | Meeting MCP (façade) | **partial** (tools/resources + tests; stdio transport TBD) |
 | 2–45 | See below | planned |
 

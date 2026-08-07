@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Physical Meeting Copilot</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg0: #0f1c18;
+        --bg1: #1a3229;
+        --ink: #e7f2ec;
+        --muted: #9bb5a8;
+        --accent: #d6a45b;
+        --line: rgba(231, 242, 236, 0.12);
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        font-family: "DM Sans", sans-serif;
+        color: var(--ink);
+        background:
+          radial-gradient(1200px 600px at 10% -10%, #2a5244 0%, transparent 55%),
+          radial-gradient(900px 500px at 100% 0%, #3a2a18 0%, transparent 50%),
+          linear-gradient(160deg, var(--bg0), var(--bg1));
+      }
+      main {
+        max-width: 720px;
+        margin: 0 auto;
+        padding: 2.5rem 1.25rem 3rem;
+      }
+      .brand {
+        font-size: clamp(1.8rem, 4vw, 2.6rem);
+        font-weight: 700;
+        letter-spacing: -0.03em;
+        margin: 0 0 0.35rem;
+      }
+      .lede {
+        color: var(--muted);
+        margin: 0 0 1.75rem;
+        max-width: 36rem;
+        line-height: 1.45;
+      }
+      .controls {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        margin-bottom: 1.25rem;
+      }
+      button {
+        font: inherit;
+        border: 0;
+        border-radius: 0.55rem;
+        padding: 0.7rem 1.1rem;
+        cursor: pointer;
+        background: var(--accent);
+        color: #1a1208;
+        font-weight: 600;
+      }
+      button.secondary {
+        background: transparent;
+        color: var(--ink);
+        border: 1px solid var(--line);
+      }
+      button:disabled { opacity: 0.45; cursor: not-allowed; }
+      .status {
+        font-family: "IBM Plex Mono", monospace;
+        font-size: 0.85rem;
+        color: var(--muted);
+        margin-bottom: 1rem;
+      }
+      .feed {
+        border-top: 1px solid var(--line);
+        padding-top: 1rem;
+        display: grid;
+        gap: 0.75rem;
+      }
+      .seg {
+        font-family: "IBM Plex Mono", monospace;
+        font-size: 0.92rem;
+        line-height: 1.4;
+      }
+      .seg .meta { color: var(--muted); font-size: 0.75rem; margin-bottom: 0.2rem; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1 class="brand">Physical Meeting Copilot</h1>
+      <p class="lede">
+        Capture table audio in the browser. Live chunks enter Meeting Core over WebSocket
+        (Phase 2 slice). LiveKit remains the preferred production transport.
+      </p>
+      <div class="controls">
+        <button id="start">Start meeting</button>
+        <button id="stop" class="secondary" disabled>Stop</button>
+      </div>
+      <div class="status" id="status">Idle</div>
+      <div class="feed" id="feed"></div>
+    </main>
+    <script>
+      const statusEl = document.getElementById("status");
+      const feedEl = document.getElementById("feed");
+      const startBtn = document.getElementById("start");
+      const stopBtn = document.getElementById("stop");
+      let ws, audioCtx, processor, source, stream, sessionId;
+
+      function setStatus(t) { statusEl.textContent = t; }
+
+      function downsampleTo16k(float32, inputRate) {
+        const ratio = inputRate / 16000;
+        const len = Math.floor(float32.length / ratio);
+        const out = new Int16Array(len);
+        for (let i = 0; i < len; i++) {
+          const sample = float32[Math.floor(i * ratio)];
+          const s = Math.max(-1, Math.min(1, sample));
+          out[i] = s < 0 ? s * 0x8000 : s * 0x7fff;
+        }
+        return out;
+      }
+
+      function b64(int16) {
+        const bytes = new Uint8Array(int16.buffer);
+        let s = "";
+        for (let i = 0; i < bytes.length; i++) s += String.fromCharCode(bytes[i]);
+        return btoa(s);
+      }
+
+      async function start() {
+        startBtn.disabled = true;
+        const res = await fetch("/api/sessions", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ title: "Browser capture" }),
+        });
+        const data = await res.json();
+        sessionId = data.session_id;
+        const proto = location.protocol === "https:" ? "wss" : "ws";
+        ws = new WebSocket(`${proto}://${location.host}/ws/audio/${sessionId}`);
+        ws.onmessage = (ev) => {
+          const msg = JSON.parse(ev.data);
+          if (msg.type === "ingest" && msg.transcript) {
+            const div = document.createElement("div");
+            div.className = "seg";
+            div.innerHTML = `<div class="meta">${msg.transcript.language || ""} · ${msg.timestamp_ms}ms · rms ${Math.round(msg.rms)}</div>${msg.transcript.text}`;
+            feedEl.prepend(div);
+          }
+          if (msg.type === "ready") setStatus(`Live · session ${sessionId.slice(0, 8)}`);
+        };
+        await new Promise((resolve, reject) => {
+          ws.onopen = resolve;
+          ws.onerror = reject;
+        });
+        stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        audioCtx = new AudioContext();
+        source = audioCtx.createMediaStreamSource(stream);
+        processor = audioCtx.createScriptProcessor(4096, 1, 1);
+        let t0 = performance.now();
+        processor.onaudioprocess = (e) => {
+          if (!ws || ws.readyState !== 1) return;
+          const input = e.inputBuffer.getChannelData(0);
+          const pcm = downsampleTo16k(input, audioCtx.sampleRate);
+          ws.send(JSON.stringify({
+            type: "audio",
+            pcm_b64: b64(pcm),
+            timestamp_ms: Math.round(performance.now() - t0),
+            language_hint: "zh-CN",
+            speaker_id: "spk_room",
+          }));
+        };
+        source.connect(processor);
+        processor.connect(audioCtx.destination);
+        stopBtn.disabled = false;
+        setStatus("Capturing…");
+      }
+
+      async function stop() {
+        stopBtn.disabled = true;
+        if (processor) processor.disconnect();
+        if (source) source.disconnect();
+        if (audioCtx) await audioCtx.close();
+        if (stream) stream.getTracks().forEach((t) => t.stop());
+        if (ws && ws.readyState === 1) {
+          ws.send(JSON.stringify({ type: "stop" }));
+          ws.close();
+        }
+        startBtn.disabled = false;
+        setStatus("Stopped");
+      }
+
+      startBtn.onclick = () => start().catch((e) => {
+        console.error(e);
+        setStatus(String(e));
+        startBtn.disabled = false;
+      });
+      stopBtn.onclick = () => stop();
+    </script>
+  </body>
+</html>

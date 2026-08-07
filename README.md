@@ -25,6 +25,13 @@ Simulate a multi-speaker meeting (Phase 1 acceptance):
 uv run python -m meeting_core.demo.simulate_meeting
 ```
 
+Start the Phase 2 browser capture gateway:
+
+```bash
+uv run meeting-gateway
+# open http://127.0.0.1:8787 — allow mic — Start meeting
+```
+
 ## Architecture (summary)
 
 ```text
