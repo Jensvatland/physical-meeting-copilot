@@ -10,45 +10,43 @@ Reference brains: Hermes and OpenClaw. Clients progress: browser/macOS prototype
 
 A Meeting Core that captures room audio, transcribes (Mandarin + English), diarizes speakers, translates while preserving originals, maintains structured meeting state, and exposes that state to personal AI agents via MCP — without embedding assistant/CRM/research logic in the core.
 
-## Quick start
+## Quick start (Mac / Linux)
+
+**Requires:** Python 3.11+ and [uv](https://github.com/astral-sh/uv).
 
 ```bash
-# Requires Python 3.11+ and uv
-uv sync
-uv run pytest
-uv run ruff check .
-uv run python -m meeting_core.eval.harness
+git clone https://github.com/Jensvatland/physical-meeting-copilot.git
+cd physical-meeting-copilot
+# until merged: git checkout cursor/complete-runtime-foundation-e10f
+
+chmod +x scripts/mac-smoke.sh
+./scripts/mac-smoke.sh
 ```
 
-Simulate a multi-speaker meeting (Hermes research slice included):
+That offline smoke test needs **no microphone and no API keys**. Details: [docs/MAC.md](docs/MAC.md).
 
-```bash
-uv run python -m meeting_core.demo.simulate_meeting
-```
-
-Start the browser capture gateway (shares `MEETING_CORE_DB` with MCP):
+### Optional: browser capture UI
 
 ```bash
 export MEETING_CORE_DB=~/.physical-meeting-copilot/meetings.db
 uv run meeting-gateway
-# open http://127.0.0.1:8787 — allow mic — Start meeting
+# open http://127.0.0.1:8787 — Chrome — allow mic — Start meeting
 ```
 
-Run the Meeting MCP server (stdio) for Hermes/OpenClaw:
+> **Expectation:** mic → server works, but transcript text is still from a **simulated ASR** (`[sim:…]`). For the full claim → research → alert demo without speaking, rely on `simulate_meeting` (included in the smoke script).
+
+### Optional: MCP for Hermes / OpenClaw
 
 ```bash
 export MEETING_CORE_DB=~/.physical-meeting-copilot/meetings.db
 uv run python -m meeting_mcp
-# or: uv run meeting-mcp
 ```
 
-Docker (self-host):
+### Docker
 
 ```bash
 docker compose up --build
-# China / global overlays:
-# docker compose -f docker-compose.yml -f docker-compose.china.yml up --build
-# docker compose -f docker-compose.yml -f docker-compose.global.yml up --build
+# overlays: docker-compose.china.yml / docker-compose.global.yml
 ```
 
 ## Architecture (summary)
@@ -65,6 +63,7 @@ See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 | Doc | Purpose |
 |-----|---------|
+| [MAC.md](docs/MAC.md) | MacBook download + smoke + mic expectations |
 | [ARCHITECTURE.md](docs/ARCHITECTURE.md) | System design, planes, adapters |
 | [ROADMAP.md](docs/ROADMAP.md) | Phases 0–45 and acceptance criteria |
 | [PROTOCOL.md](docs/PROTOCOL.md) | Canonical event schema + MCP surface |
@@ -85,7 +84,7 @@ See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 ## Status
 
-Runtime foundation (phases 0–22) is in place with sim adapters where production ML/providers are optional. Next focus: real FunASR/LiveKit/Qwen adapters, richer eval noise suites, and iOS clients (phases 30+). See [docs/ROADMAP.md](docs/ROADMAP.md).
+Runtime foundation (phases 0–22) is in place with **sim adapters** where production ML/providers are optional. Offline smoke is the supported first test; real FunASR/LiveKit/Qwen and iOS come next. See [docs/ROADMAP.md](docs/ROADMAP.md).
 
 ## License
 

@@ -13,6 +13,9 @@ from meeting_core.domain.models import SessionState
 class SqliteStorageAdapter(StorageAdapter):
     def __init__(self, path: str | Path = ":memory:") -> None:
         self.path = str(path)
+        if self.path != ":memory:":
+            Path(self.path).expanduser().parent.mkdir(parents=True, exist_ok=True)
+            self.path = str(Path(self.path).expanduser())
         self._conn = sqlite3.connect(self.path, check_same_thread=False)
         self._conn.execute(
             """
