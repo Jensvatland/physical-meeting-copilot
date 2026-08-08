@@ -1,38 +1,40 @@
-# Proposed good first issues
+# Good first issues
 
-These are **real** starter tasks derived from the current codebase. Prefer opening GitHub issues from this list (label `good first issue`) rather than inventing busywork.
+Real starter tasks from the codebase — not busywork.
 
-## Documentation / DX
+## Publish them on GitHub
 
-1. **README demo media** — Add a short GIF or screenshots of the browser UI and `simulate_meeting` output (synthetic only; no real meeting audio).
-2. **Fixture WAV replay path** — Document or sketch how to feed a checked-in synthetic PCM/WAV into the gateway for deterministic mic-less UI demos (`docs/MAC.md` already calls this out).
-3. **China profile doc pass** — Align `docs/CHINA.md` wording with what `docker-compose.china.yml` and `funasr_stub.py` actually do today.
+From a machine with write access to the repo:
 
-## Tests / tooling
+```bash
+gh auth login   # needs Issues write
+bash scripts/bootstrap-community.sh
+```
 
-4. **FunASR stub tests** — Expand `packages/meeting_core/tests/test_adapters.py` for enable/disable + `NotImplementedError` when `FUNASR_ENABLED=1` without a runtime.
-5. **Eval scenario expansion** — Add text fixtures to `meeting_core.eval.harness` for code-switching, numbers/dates/prices, or negation (no proprietary audio required).
-6. **Ruff format in contributor habit** — Ensure `uv run ruff format` is clean across packages (CI already checks).
+That creates labels + ~10 starter issues (`good first issue` / `help wanted` / `experiment`). Safe to re-run (skips existing titles).
 
-## Adapters / integrations
+Then enable **Discussions** in GitHub settings (General, Ideas, Q&A, Show and Tell, Experiments, Integrations).
 
-7. **Qwen-compatible translation adapter skeleton** — Optional HTTP adapter behind `TranslationAdapter`, env-gated, with mocked unit tests (do not make it mandatory).
-8. **LiveKit adapter next step** — Flesh `livekit_stub.py` toward a real optional SDK path with clear degraded health when unset.
-9. **OpenClaw skill parity checklist** — Compare `integrations/openclaw` vs `integrations/hermes` and document/fix any missing bridge behaviors.
+## Starter list (same as the script)
 
-## UI / accessibility
+| # | Title | Labels |
+|---|-------|--------|
+| 1 | README screenshots / short GIF | documentation |
+| 2 | FunASR stub enable/disable tests | STT |
+| 3 | Expand eval harness text scenarios | AI |
+| 4 | Browser UI accessibility pass | documentation |
+| 5 | Consent / recording notice clarity | privacy |
+| 6 | Qwen-compatible translation adapter skeleton | translation, models |
+| 7 | OpenClaw vs Hermes parity checklist | integration, MCP |
+| 8 | Mic-less synthetic WAV/PCM replay | audio |
+| 9 | Align China profile docs with reality | documentation |
+| 10 | Experiment: alternative local STT adapter | experiment, STT, models |
 
-10. **Browser accessibility pass** — Keyboard focus, labels, and contrast for controls in `clients/web/public/index.html` without removing the Simulated ASR honesty banner.
-11. **Consent copy clarity** — Improve the session-start consent/recording notice so operators see responsibilities clearly (link to `docs/PRIVACY.md`).
+## Rules of thumb
 
-## Privacy / security hygiene
+- Keep sim vs real honesty in UI/docs
+- No real meeting audio, transcripts, or personal data in the repo
+- Prefer adapters over core vendor lock-in
+- AI-assisted PRs welcome — humans review/test before submit
 
-12. **Gateway bind warning** — Surface a startup log warning when `MEETING_GATEWAY_HOST` is not loopback, reminding operators there is no auth yet.
-13. **Redaction helper tests** — If adding log helpers for tokens, cover them with unit tests (no real secrets in fixtures).
-
-## Larger (still valuable, maybe not “first”)
-
-14. **Real FunASR/SenseVoice wire-up** — Optional extra; keep sim default until quality/docs catch up.
-15. **Synthetic multi-speaker audio suite** — Checked-in generated audio for regression without a live room.
-
-When filing: include pointers to files, a short definition of done, and whether the change stays sim-honest.
+See [CONTRIBUTING.md](../CONTRIBUTING.md) and [COMMUNITY.md](COMMUNITY.md).

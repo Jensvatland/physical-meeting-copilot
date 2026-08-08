@@ -42,12 +42,30 @@ Full honesty: [docs/STATUS.md](docs/STATUS.md).
 
 ## How can I help?
 
+You do not need an invitation. Pick something small and open a PR.
+
 ```bash
 bash scripts/try.sh          # first run
 bash scripts/mac-smoke.sh    # full contributor check
 ```
 
-Then open an issue or PR. Read [CONTRIBUTING.md](CONTRIBUTING.md) (short). Starter ideas: [docs/GOOD_FIRST_ISSUES.md](docs/GOOD_FIRST_ISSUES.md). Coding agents: [AGENTS.md](AGENTS.md).
+### Wanted right now
+
+| If you like… | Try this |
+|--------------|----------|
+| Docs / visuals | README screenshot or short GIF |
+| Tests | FunASR stub enable/disable coverage |
+| Eval / AI | More text scenarios in the eval harness |
+| UI | Accessibility pass (keep Simulated ASR banner) |
+| Privacy | Clearer consent / recording notice |
+| Models | Optional Qwen-compatible translation adapter |
+| Integrations | OpenClaw ↔ Hermes parity checklist |
+| Audio | Mic-less synthetic WAV replay into the gateway |
+| Experiments | Alternative local STT behind the adapter interface |
+
+Full list + one-command publisher: [docs/GOOD_FIRST_ISSUES.md](docs/GOOD_FIRST_ISSUES.md) (`bash scripts/bootstrap-community.sh`).
+
+Read [CONTRIBUTING.md](CONTRIBUTING.md) (short). Coding agents: [AGENTS.md](AGENTS.md). AI-generated contributions are welcome — you still review/test before submitting.
 
 ## Docs
 
