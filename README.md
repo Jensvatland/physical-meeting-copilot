@@ -58,6 +58,7 @@ uv run python -m meeting_mcp
 
 ```bash
 docker compose up --build
+# overlays: docker-compose.china.yml / docker-compose.global.yml
 ```
 
 ## How to contribute
@@ -89,6 +90,7 @@ See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 | [ROADMAP.md](docs/ROADMAP.md) | MVP → v1.0 |
 | [PROTOCOL.md](docs/PROTOCOL.md) | Events + MCP surface |
 | [ARCHITECTURE.md](docs/ARCHITECTURE.md) | Planes and adapters |
+| [DECISIONS.md](docs/DECISIONS.md) | ADR index |
 | [SECURITY.md](docs/SECURITY.md) / [PRIVACY.md](docs/PRIVACY.md) | Baseline threat & consent |
 | [CHINA.md](docs/CHINA.md) | China-first profile intent |
 | [LICENSES.md](docs/LICENSES.md) | Dependency notes |

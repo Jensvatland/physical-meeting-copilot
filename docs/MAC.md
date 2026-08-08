@@ -7,7 +7,7 @@ Run a full offline smoke test without microphone or API keys, then optionally op
 - macOS or Linux with Terminal
 - Python 3.11+ (Homebrew: `brew install python@3.12`)
 - [uv](https://github.com/astral-sh/uv): `curl -LsSf https://astral.sh/uv/install.sh | sh`
-- Chrome recommended for mic capture
+- Chrome recommended for mic capture (Safari is less reliable with this prototype)
 
 ## 1) Download
 
@@ -49,7 +49,10 @@ Accept the consent checkbox → allow microphone → **Start meeting**.
 | Transcript text | **Simulated** (`[sim:zh-CN:…]`) |
 | Translation | Glossary / stub |
 | Alerts / findings / research | Via demo + MCP/Hermes path |
+| Private speech / AirPods | Lifecycle events only; no real device TTS yet |
 | Languages | **zh-CN + en** MVP pair |
+
+So: the pipeline and UI are testable; **realistic live transcription is not**.
 
 ## 4) Optional MCP
 
@@ -66,6 +69,7 @@ Configs: `integrations/hermes/mcp.json`, `integrations/openclaw/mcp.json`.
 |---------|-----|
 | `uv: command not found` | `source $HOME/.local/bin/env` or restart Terminal |
 | `consent_required` | Check the UI box or send `"consent": true` |
+| DB path errors | Smoke script creates `~/.physical-meeting-copilot/`; core also auto-creates parent dirs |
 | Mic denied | System Settings → Privacy → Microphone → Chrome |
 | No useful transcript while speaking | Expected with sim ASR — use smoke / `simulate_meeting` |
 | Port busy | `MEETING_GATEWAY_PORT=8788 uv run meeting-gateway` |
