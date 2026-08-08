@@ -243,6 +243,13 @@ def main() -> None:
 
     host = os.environ.get("MEETING_GATEWAY_HOST", "127.0.0.1")
     port = int(os.environ.get("MEETING_GATEWAY_PORT", "8787"))
+    db = _db_path()
+    print("Physical Meeting Copilot — meeting-gateway")
+    print(f"  UI:      http://{host}:{port}")
+    print(f"  DB:      {db}")
+    print("  Capture: browser mic → WebSocket PCM (LiveKit optional)")
+    print("  ASR/MT:  simulated adapters (real speech text requires FunASR/Qwen later)")
+    print("  Tip:     use Chrome; allow microphone; run scripts/mac-smoke.sh first")
     uvicorn.run("meeting_gateway.app:app", host=host, port=port, reload=False)
 
 
