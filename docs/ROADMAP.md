@@ -2,6 +2,8 @@
 
 Phases are complete only when code, tests, docs, fallbacks, license notes, and acceptance criteria pass — without provider-specific leakage into Meeting Core.
 
+For a short “what works today” table, see [STATUS.md](STATUS.md).
+
 ## Current status
 
 | Phase | Name | Status |

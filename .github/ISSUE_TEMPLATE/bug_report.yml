@@ -1,0 +1,52 @@
+name: Bug Report
+description: Something unexpected happened
+title: "[bug] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the report. Check [docs/STATUS.md](https://github.com/Jensvatland/physical-meeting-copilot/blob/main/docs/STATUS.md) first — simulated ASR/diarization/translation is expected today.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What did you observe?
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Reproduction steps
+      description: Commands, clicks, or minimal scenario
+      value: |
+        1.
+        2.
+        3.
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: OS, Python version, browser, branch/commit if known
+      value: |
+        - OS:
+        - Python:
+        - Browser (if UI):
+        - Commit / branch:
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs / screenshots
+      description: Paste relevant logs (redact secrets). Attach screenshots if useful.
+    validations:
+      required: false

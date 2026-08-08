@@ -67,7 +67,7 @@ def test_diarization_and_health() -> None:
     async def _run() -> None:
         d = SimulatedDiarizationAdapter(speaker_count=4)
         # loud-ish PCM16 silence-ish but non-zero
-        pcm = (b"\x00\x10" * 800)
+        pcm = b"\x00\x10" * 800
         label = await d.label(pcm)
         assert label["speaker_id"].startswith("spk_")
         health = aggregate_health({"diarization": d, "tts": SimulatedTextToSpeechAdapter()})

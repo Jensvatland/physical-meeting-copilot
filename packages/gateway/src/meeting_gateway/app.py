@@ -250,6 +250,12 @@ def main() -> None:
     print("  Capture: browser mic → WebSocket PCM (LiveKit optional)")
     print("  ASR/MT:  simulated adapters (real speech text requires FunASR/Qwen later)")
     print("  Tip:     use Chrome; allow microphone; run scripts/mac-smoke.sh first")
+    if host not in {"127.0.0.1", "localhost", "::1"}:
+        print(
+            "  WARNING: gateway has no authentication yet; "
+            f"binding to {host!r} exposes an open meeting API on your network. "
+            "Prefer MEETING_GATEWAY_HOST=127.0.0.1 for local demos."
+        )
     uvicorn.run("meeting_gateway.app:app", host=host, port=port, reload=False)
 
 

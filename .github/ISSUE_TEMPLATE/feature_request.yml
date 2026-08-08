@@ -1,0 +1,32 @@
+name: Feature Request
+description: Suggest an improvement or new capability
+title: "[feature] "
+labels: ["feature"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What pain or gap are you addressing?
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: Proposed idea
+      description: Keep Meeting Core provider-independent. Prefer adapters over core logic.
+    validations:
+      required: true
+  - type: textarea
+    id: usefulness
+    attributes:
+      label: Why it would be useful
+    validations:
+      required: true
+  - type: textarea
+    id: implementation
+    attributes:
+      label: Possible implementation
+      description: Optional — sketches, APIs, adapters, or references
+    validations:
+      required: false
