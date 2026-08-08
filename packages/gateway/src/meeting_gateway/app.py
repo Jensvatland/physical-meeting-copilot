@@ -32,8 +32,12 @@ from starlette.websockets import WebSocket
 WEB_DIR = Path(__file__).resolve().parents[4] / "clients" / "web" / "public"
 
 
+_DEFAULT_DB = "~/.physical-meeting-copilot/meetings.db"
+
+
 def _db_path() -> str:
-    return os.path.expanduser(os.environ.get("MEETING_CORE_DB", ":memory:"))
+    # Shared default with MCP so `uv run meeting-gateway` needs no export.
+    return os.path.expanduser(os.environ.get("MEETING_CORE_DB", _DEFAULT_DB))
 
 
 class GatewayState:

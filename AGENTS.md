@@ -50,13 +50,15 @@ Read [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), [docs/PROTOCOL.md](docs/PROTO
 ## How to run tests
 
 ```bash
+bash scripts/try.sh          # first-run demo path
+bash scripts/mac-smoke.sh    # full lint + tests + demo + eval
+# or piecemeal:
 uv sync --group dev
 uv run ruff check .
 uv run ruff format --check .
 uv run pytest -q
 uv run python -m meeting_core.demo.simulate_meeting
 uv run python -m meeting_core.eval.harness
-./scripts/mac-smoke.sh
 ```
 
 CI (`.github/workflows/ci.yml`) runs lint, tests, simulate, eval, MCP inventory, and the smoke script.

@@ -7,8 +7,7 @@ Copilot prototype UI in `public/index.html`.
 Prefer the offline smoke first ([docs/MAC.md](../../docs/MAC.md)):
 
 ```bash
-./scripts/mac-smoke.sh
-export MEETING_CORE_DB=~/.physical-meeting-copilot/meetings.db
+bash scripts/try.sh
 uv run meeting-gateway
 ```
 

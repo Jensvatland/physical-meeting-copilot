@@ -32,11 +32,11 @@ We want contributions, not paperwork. Keep process light.
 ```bash
 git clone https://github.com/Jensvatland/physical-meeting-copilot.git
 cd physical-meeting-copilot
-chmod +x scripts/mac-smoke.sh
-./scripts/mac-smoke.sh
+bash scripts/try.sh          # first run / demo
+bash scripts/mac-smoke.sh    # full lint + tests
 ```
 
-Offline smoke needs no microphone and no API keys. Details: [docs/MAC.md](docs/MAC.md).
+No microphone and no API keys. Details: [docs/MAC.md](docs/MAC.md).
 
 Useful docs before larger changes:
 
@@ -70,7 +70,6 @@ uv run python -m meeting_core.eval.harness
 Optional live UI (ASR text is still simulated):
 
 ```bash
-export MEETING_CORE_DB=~/.physical-meeting-copilot/meetings.db
 uv run meeting-gateway
 # Chrome → http://127.0.0.1:8787
 ```
