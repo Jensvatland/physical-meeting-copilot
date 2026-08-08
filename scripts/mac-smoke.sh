@@ -75,10 +75,12 @@ cat <<EOF
 
 Smoke OK.
 
-Next (optional, needs browser mic — ASR text is still simulated):
+Next (optional browser UI — ASR text is still simulated):
   uv run meeting-gateway
-  open http://127.0.0.1:8787   # Chrome recommended
+  open http://127.0.0.1:8787   # Chrome — accept consent — Start meeting
 
 First-time path: bash scripts/try.sh
-See docs/MAC.md for expectations and limits.
+DB default: ~/.physical-meeting-copilot/meetings.db (no export required)
+Languages: zh-CN + en (MVP). See docs/STATUS.md and docs/MAC.md.
 EOF
+

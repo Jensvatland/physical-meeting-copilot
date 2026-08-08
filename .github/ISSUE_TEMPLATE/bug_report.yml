@@ -1,17 +1,17 @@
 name: Bug Report
-description: Something unexpected happened
+description: Something unexpected happened (v0.1 preview — simulated ASR is expected)
 title: "[bug] "
 labels: ["bug"]
 body:
   - type: markdown
     attributes:
       value: |
-        Thanks for the report. Check [docs/STATUS.md](https://github.com/Jensvatland/physical-meeting-copilot/blob/main/docs/STATUS.md) first — simulated ASR/diarization/translation is expected today.
+        Thanks for the report. Check [docs/STATUS.md](https://github.com/Jensvatland/physical-meeting-copilot/blob/main/docs/STATUS.md) first — simulated ASR/diarization/translation is expected in v0.1.
   - type: textarea
     id: what-happened
     attributes:
       label: What happened
-      description: What did you observe?
+      description: What did you observe? Expected vs actual.
     validations:
       required: true
   - type: textarea
@@ -29,6 +29,10 @@ body:
         1.
         2.
         3.
+
+        ```bash
+        ./scripts/mac-smoke.sh
+        ```
     validations:
       required: true
   - type: textarea
@@ -41,6 +45,20 @@ body:
         - Python:
         - Browser (if UI):
         - Commit / branch:
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Smoke / install
+        - Meeting Core
+        - Gateway / browser UI
+        - MCP
+        - Docs
+        - Docker
+        - Other
     validations:
       required: true
   - type: textarea

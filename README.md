@@ -1,10 +1,14 @@
 # Physical Meeting Copilot
 
-An open-source experiment: an AI copilot for **real face-to-face meetings**.
+**v0.1 preview** — an open-source experiment: an AI copilot for **real face-to-face meetings**.
 
 > The meeting runtime listens; your personal AI understands.
 
+[简体中文](README.zh-CN.md) · [Status](docs/STATUS.md) · [Contributing](CONTRIBUTING.md) · [Mac quick start](docs/MAC.md)
+
 Clone it, run it, break it, improve it. AI coding agents welcome. You do not need permission to experiment.
+
+Reference integrations: [`integrations/hermes`](integrations/hermes), [`integrations/openclaw`](integrations/openclaw). Clients today: browser prototype → later iPhone / iPad.
 
 ## Try it
 
@@ -24,9 +28,9 @@ When that finishes, start the UI:
 uv run meeting-gateway
 ```
 
-Open [http://127.0.0.1:8787](http://127.0.0.1:8787) in Chrome.
+Open [http://127.0.0.1:8787](http://127.0.0.1:8787) in Chrome → accept consent → Start meeting.
 
-Live transcript text is still **simulated** (`[sim:…]`). The offline demo inside `try.sh` is the full claim → research → alert slice.
+You will see a **Simulated ASR** notice. That is intentional in v0.1. Live transcript text is still **simulated** (`[sim:…]`). The offline demo inside `try.sh` is the full claim → research → alert slice.
 
 More detail: [docs/MAC.md](docs/MAC.md).
 
@@ -39,6 +43,16 @@ More detail: [docs/MAC.md](docs/MAC.md).
 | 🚧 Planned | Real speech models, iOS/iPad, production LiveKit, auth for remote access |
 
 Full honesty: [docs/STATUS.md](docs/STATUS.md).
+
+## Supported languages (v0.1)
+
+| Role | Languages |
+|------|-----------|
+| Meeting speech pair | **Mandarin (`zh-CN`) + English (`en`)** only |
+| Project documentation | English (canonical) + Simplified Chinese README |
+| Future locales | Welcome as adapters later — not in MVP scope |
+
+Protocol fields are BCP-47-ready; contribution focus stays on this pair until a real ASR/MT adapter lands.
 
 ## How can I help?
 
@@ -66,6 +80,14 @@ bash scripts/mac-smoke.sh    # full contributor check
 Full list + one-command publisher: [docs/GOOD_FIRST_ISSUES.md](docs/GOOD_FIRST_ISSUES.md) (`bash scripts/bootstrap-community.sh`).
 
 Read [CONTRIBUTING.md](CONTRIBUTING.md) (short). Coding agents: [AGENTS.md](AGENTS.md). AI-generated contributions are welcome — you still review/test before submitting.
+
+## Architecture (summary)
+
+```text
+PHYSICAL MEETING → Capture → WebSocket (LiveKit later)
+  → Meeting Core (events, transcript, claims, research, alerts)
+  → Browser UI  |  Meeting MCP → Hermes / OpenClaw / other agents
+```
 
 ## Docs
 

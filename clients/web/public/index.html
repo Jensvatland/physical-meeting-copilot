@@ -125,6 +125,29 @@
         padding: 0.25rem 0.5rem;
         border-radius: 0.35rem;
       }
+      .banner {
+        margin: 0 0 1.25rem;
+        padding: 0.75rem 0.9rem;
+        border: 1px solid rgba(214, 164, 91, 0.45);
+        background: rgba(214, 164, 91, 0.1);
+        color: var(--ink);
+        font-size: 0.92rem;
+        line-height: 1.4;
+        animation: rise 0.75s ease both;
+      }
+      .banner strong { color: var(--accent); }
+      .consent {
+        display: flex;
+        gap: 0.55rem;
+        align-items: flex-start;
+        margin: 0 0 1rem;
+        color: var(--muted);
+        font-size: 0.9rem;
+        line-height: 1.4;
+        max-width: 40rem;
+        animation: rise 0.85s ease both;
+      }
+      .consent input { margin-top: 0.2rem; }
       @keyframes rise {
         from { opacity: 0; transform: translateY(10px); }
         to { opacity: 1; transform: none; }
@@ -141,12 +164,25 @@
       <p class="lede">
         Capture table audio, follow speakers and translations, and surface alerts
         while your personal agent researches in the background.
+        v0.1 supports Mandarin + English meeting workflows.
       </p>
+      <div class="banner" role="status">
+        <strong>Simulated ASR (v0.1).</strong>
+        Mic → server works, but transcript text is fixture output (<code>[sim:…]</code>),
+        not real speech recognition. Use <code>./scripts/mac-smoke.sh</code> for the full offline demo.
+      </div>
+      <label class="consent">
+        <input type="checkbox" id="consent" />
+        <span>
+          I understand this prototype may record and analyze audio locally for development,
+          and I have permission from participants to proceed.
+        </span>
+      </label>
       <div class="controls">
-        <button id="start">Start meeting</button>
+        <button id="start" disabled>Start meeting</button>
         <button id="stop" class="secondary" disabled>Stop</button>
       </div>
-      <div class="status" id="status">Idle</div>
+      <div class="status" id="status">Accept consent to start</div>
       <div class="layout">
         <div class="feed" id="feed"></div>
         <aside class="side">
@@ -178,6 +214,7 @@
       const feedEl = document.getElementById("feed");
       const startBtn = document.getElementById("start");
       const stopBtn = document.getElementById("stop");
+      const consentEl = document.getElementById("consent");
       const peopleEl = document.getElementById("people");
       const alertsEl = document.getElementById("alerts");
       const findingsEl = document.getElementById("findings");
@@ -186,6 +223,12 @@
       let ws, audioCtx, processor, source, stream, sessionId, pollTimer;
 
       function setStatus(t) { statusEl.textContent = t; }
+
+      consentEl.addEventListener("change", () => {
+        startBtn.disabled = !consentEl.checked;
+        if (consentEl.checked) setStatus("Ready · Simulated ASR · zh-CN/en");
+        else setStatus("Accept consent to start");
+      });
 
       function downsampleTo16k(float32, inputRate) {
         const ratio = inputRate / 16000;
@@ -246,6 +289,10 @@
       }
 
       async function start() {
+        if (!consentEl.checked) {
+          setStatus("Consent required");
+          return;
+        }
         startBtn.disabled = true;
         feedEl.innerHTML = "";
         const res = await fetch("/api/sessions", {
@@ -253,6 +300,7 @@
           headers: { "content-type": "application/json" },
           body: JSON.stringify({
             title: "Browser capture",
+            consent: true,
             pre_meeting: {
               goals: ["Follow the conversation"],
               watch_items: ["price", "capacity", "warranty", "delivery"],
@@ -261,6 +309,9 @@
           }),
         });
         const data = await res.json();
+        if (!res.ok) {
+          throw new Error(data.message || data.error || "session start failed");
+        }
         sessionId = data.session_id;
         const proto = location.protocol === "https:" ? "wss" : "ws";
         ws = new WebSocket(`${proto}://${location.host}/ws/audio/${sessionId}`);

@@ -1,4 +1,7 @@
-# Security
+# Security (architecture)
+
+Reporting process: see root [SECURITY.md](../SECURITY.md).
+
 
 Baseline threat model for Physical Meeting Copilot. Expanded checks land in Phase 14 / 43.
 

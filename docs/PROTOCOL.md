@@ -1,8 +1,9 @@
 # Protocol
 
-Canonical event schema is versioned from day one. Machine-validatable JSON Schemas live in `packages/protocol/schemas/`.
+Canonical event schema is versioned from day one. Machine-validatable JSON Schemas for the common envelope and claims live in `packages/protocol/schemas/`. For v0.1, **Pydantic models in Meeting Core** are the complete runtime source of truth; additional event schemas will catch up as the protocol hardens.
 
-**Current protocol version:** `0.1.0`
+**Current protocol version:** `0.1.0`  
+**MVP languages:** `zh-CN`, `en`
 
 ## Common envelope
 
