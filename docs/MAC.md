@@ -11,13 +11,12 @@ Run a full offline smoke test without microphone or API keys, then optionally op
 
 ## 1) Download
 
-Until PR #1 is merged to `main`, clone the feature branch:
-
 ```bash
 git clone https://github.com/Jensvatland/physical-meeting-copilot.git
 cd physical-meeting-copilot
-git checkout cursor/complete-runtime-foundation-e10f
 ```
+
+If you are testing an unmerged contribution branch, check it out explicitly after cloning.
 
 ## 2) Offline smoke (no mic)
 
@@ -79,8 +78,9 @@ Point the host at `integrations/hermes/mcp.json` or `integrations/openclaw/mcp.j
 
 Improvements that do **not** need a physical meeting:
 
-1. Merge this branch to `main` so clone defaults work
-2. Fixture WAV replay into the gateway (deterministic “fake mic” without speaking)
-3. Sample UI screenshots / short GIF in README
-4. One-click `brew`/`uvx` style install note once published
-5. Wire a real local ASR later (FunASR) when you want spoken Mandarin to appear as Chinese text
+1. Fixture WAV replay into the gateway (deterministic “fake mic” without speaking)
+2. Sample UI screenshots / short GIF in README
+3. One-click `brew`/`uvx` style install note
+4. Wire a real local ASR later (FunASR) when you want spoken Mandarin to appear as Chinese text
+
+See also [GOOD_FIRST_ISSUES.md](GOOD_FIRST_ISSUES.md).

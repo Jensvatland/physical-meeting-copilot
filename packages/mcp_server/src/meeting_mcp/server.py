@@ -316,9 +316,7 @@ def build_mcp_server(facade: MeetingMCPFacade | None = None):
     @server.tool(name="meeting.get_recent_context")
     async def get_recent_context(session_id: str | None = None, limit: int = 20) -> str:
         return _json(
-            await facade.call_tool_async(
-                "meeting.get_recent_context", {"session_id": session_id, "limit": limit}
-            )
+            await facade.call_tool_async("meeting.get_recent_context", {"session_id": session_id, "limit": limit})
         )
 
     @server.tool(name="meeting.search_transcript")

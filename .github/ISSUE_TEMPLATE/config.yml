@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Security vulnerability
+    url: https://github.com/Jensvatland/physical-meeting-copilot/blob/main/SECURITY.md
+    about: Do not file public issues for security reports — see SECURITY.md
+  - name: Discussions (ideas & experiments)
+    url: https://github.com/Jensvatland/physical-meeting-copilot/discussions
+    about: Broader ideas and show-and-tell once Discussions are enabled

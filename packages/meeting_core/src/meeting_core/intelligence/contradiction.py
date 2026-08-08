@@ -80,8 +80,7 @@ def compare_claim_to_prior(claim: Claim, pre_meeting: PreMeetingContext) -> dict
     return {
         "suggested_state": ClaimState.SUPPORTED_PROJECT_SOURCE.value,
         "evidence": [
-            {"source": "prior_facts", "note": "Consistent with prior project fact", "fact": m["fact"]}
-            for m in matches
+            {"source": "prior_facts", "note": "Consistent with prior project fact", "fact": m["fact"]} for m in matches
         ],
         "matches": matches,
     }

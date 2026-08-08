@@ -18,6 +18,7 @@ uv sync --group dev
 
 echo "==> ruff"
 uv run ruff check .
+uv run ruff format --check .
 
 echo "==> pytest"
 uv run pytest -q

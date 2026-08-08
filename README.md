@@ -1,24 +1,42 @@
 # Physical Meeting Copilot
 
-Open-source, provider-independent runtime for AI-assisted physical face-to-face meetings.
+Open-source experimental runtime for an AI copilot in **real-world, face-to-face meetings**.
 
 > **The meeting runtime listens; the user’s personal AI understands.**
 
-Reference brains: Hermes and OpenClaw. Clients progress: browser/macOS prototype → iPhone → iPad.
+This project exists because we want this tool to exist. Everyone is welcome to clone it, run it, test it, experiment, report problems, suggest ideas, build integrations, improve features, open pull requests, and fork it.
 
-## What this is
+You do not need permission to experiment.
 
-A Meeting Core that captures room audio, transcribes (Mandarin + English), diarizes speakers, translates while preserving originals, maintains structured meeting state, and exposes that state to personal AI agents via MCP — without embedding assistant/CRM/research logic in the core.
+[Contributing](CONTRIBUTING.md) · [Status](docs/STATUS.md) · [Agents](AGENTS.md) · [Community](docs/COMMUNITY.md) · [Mac/Linux quick start](docs/MAC.md) · [Security](SECURITY.md)
 
-## Quick start (Mac / Linux)
+## What is this?
+
+A **Meeting Core** that can capture room audio, transcribe (Mandarin + English path), diarize speakers, translate while preserving originals, maintain structured meeting state, and expose that state to personal AI agents via **MCP** — without embedding assistant/CRM/research logic in the core.
+
+Reference integrations: Hermes and OpenClaw. Clients today: browser prototype → later iPhone / iPad / macOS.
+
+## Why does it exist?
+
+Physical meetings still lose context, contradictions, and follow-ups in the noise. We want a provider-independent, local-first runtime that *listens* and lets *your* agents understand — especially for Mandarin/English rooms and China-capable deployments where OpenAI is never mandatory.
+
+## What currently works?
+
+| | |
+|---|---|
+| ✅ **Working today** | Meeting Core, SQLite, offline smoke, browser mic→WebSocket capture, MCP stdio, Hermes research demo slice, export/history heuristics, Docker sim stack |
+| 🧪 **Experimental** | Simulated ASR/diarization/translation/TTS; LiveKit/FunASR/Postgres stubs; unauthenticated local gateway |
+| 🚧 **Planned** | Real ASR/MT adapters, LiveKit production path, iOS/iPad clients, stronger audio eval suites, auth for remote exposure |
+
+Details: [docs/STATUS.md](docs/STATUS.md).
+
+## How do I try it?
 
 **Requires:** Python 3.11+ and [uv](https://github.com/astral-sh/uv).
 
 ```bash
 git clone https://github.com/Jensvatland/physical-meeting-copilot.git
 cd physical-meeting-copilot
-# until merged: git checkout cursor/complete-runtime-foundation-e10f
-
 chmod +x scripts/mac-smoke.sh
 ./scripts/mac-smoke.sh
 ```
@@ -49,6 +67,17 @@ docker compose up --build
 # overlays: docker-compose.china.yml / docker-compose.global.yml
 ```
 
+> Docker publishes the gateway without auth. Use only on trusted networks; prefer local binds for demos. See [SECURITY.md](SECURITY.md).
+
+## How can I help?
+
+1. Read [CONTRIBUTING.md](CONTRIBUTING.md) (lightweight rules; AI-assisted PRs welcome).
+2. Skim [docs/STATUS.md](docs/STATUS.md) and [AGENTS.md](AGENTS.md).
+3. Run `./scripts/mac-smoke.sh`.
+4. Open an issue or PR — bugs, docs, adapters, languages, hardware experiments, integrations.
+
+Starter ideas: [docs/GOOD_FIRST_ISSUES.md](docs/GOOD_FIRST_ISSUES.md).
+
 ## Architecture (summary)
 
 ```text
@@ -63,15 +92,18 @@ See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 | Doc | Purpose |
 |-----|---------|
-| [MAC.md](docs/MAC.md) | MacBook download + smoke + mic expectations |
+| [STATUS.md](docs/STATUS.md) | Honest “works / experimental / planned” |
+| [MAC.md](docs/MAC.md) | Download + smoke + mic expectations |
 | [ARCHITECTURE.md](docs/ARCHITECTURE.md) | System design, planes, adapters |
-| [ROADMAP.md](docs/ROADMAP.md) | Phases 0–45 and acceptance criteria |
+| [ROADMAP.md](docs/ROADMAP.md) | Phases and acceptance criteria |
 | [PROTOCOL.md](docs/PROTOCOL.md) | Canonical event schema + MCP surface |
 | [DECISIONS.md](docs/DECISIONS.md) | ADR index |
-| [SECURITY.md](docs/SECURITY.md) | Threat model baseline |
+| [SECURITY.md](SECURITY.md) / [docs/SECURITY.md](docs/SECURITY.md) | Reporting + threat model |
 | [PRIVACY.md](docs/PRIVACY.md) | Consent, biometrics, retention |
+| [COMMUNITY.md](docs/COMMUNITY.md) | Issues, Discussions, maintainers |
 | [CHINA.md](docs/CHINA.md) | China-first deployment profile |
 | [LICENSES.md](docs/LICENSES.md) | Dependency license notes |
+| [AGENTS.md](AGENTS.md) | Instructions for coding agents |
 
 ## Design principles
 
@@ -82,9 +114,9 @@ See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 5. China is a first-class profile; OpenAI is never mandatory.
 6. Voice biometrics are optional, consent-based, separable, deletable.
 
-## Status
+## Privacy note
 
-Runtime foundation (phases 0–22) is in place with **sim adapters** where production ML/providers are optional. Offline smoke is the supported first test; real FunASR/LiveKit/Qwen and iOS come next. See [docs/ROADMAP.md](docs/ROADMAP.md).
+If you record or process real conversations, **you** are responsible for complying with applicable laws and obtaining required consent. See [docs/PRIVACY.md](docs/PRIVACY.md).
 
 ## License
 
