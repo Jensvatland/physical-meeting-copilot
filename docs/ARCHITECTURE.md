@@ -44,12 +44,15 @@ browser / iOS / iPad        ├─ Hermes
 
 | Package | Role |
 |---------|------|
-| `packages/protocol` | Versioned JSON Schemas for events and resources |
+| `packages/protocol` | JSON Schemas (envelope + claim); Pydantic models in Meeting Core are the runtime source for v0.1 |
 | `packages/meeting_core` | Session lifecycle, event bus, stores, adapter contracts |
-| `packages/mcp_server` | MCP resources + tools over Meeting Core |
+| `packages/mcp_server` | MCP resources + tools over Meeting Core (stdio) |
+| `packages/gateway` | Browser WebSocket PCM ingest (working path); LiveKit preferred later |
 | `integrations/hermes` | Skill + MCP config + event bridge (no host logic in core) |
-| `integrations/openclaw` | Second reference integration |
+| `integrations/openclaw` | Second reference integration (thinner mirror today) |
 | `clients/web` | Browser prototype UI |
+
+**Languages (v0.1):** meeting defaults are Mandarin (`zh-CN`) + English (`en`). See [STATUS.md](STATUS.md).
 
 ## Adapter contracts
 

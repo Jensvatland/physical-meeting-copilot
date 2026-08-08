@@ -1,0 +1,29 @@
+name: Feature request
+description: Propose an improvement aligned with the roadmap
+title: "[feat] "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What user/contributor pain does this solve?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposal
+      description: Keep Meeting Core provider-independent. Prefer adapters over core logic.
+    validations:
+      required: true
+  - type: dropdown
+    id: languages
+    attributes:
+      label: Language impact
+      options:
+        - No change (zh-CN + en MVP)
+        - Improves zh-CN / en path
+        - Adds a new spoken language (post-MVP / adapter)
+    validations:
+      required: true

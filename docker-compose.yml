@@ -1,4 +1,5 @@
-# Default self-host stack (SQLite + gateway). See also docker-compose.china.yml / docker-compose.global.yml.
+# Default self-host stack (SQLite + gateway) — v0.1 SIM adapters.
+# See docker-compose.china.yml / docker-compose.global.yml for profile labels (not real model stacks yet).
 services:
   meeting-gateway:
     build: .

@@ -1,0 +1,41 @@
+name: Bug report
+description: Something broken in the v0.1 preview
+title: "[bug] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Check [docs/STATUS.md](https://github.com/Jensvatland/physical-meeting-copilot/blob/main/docs/STATUS.md) first — simulated ASR is expected in v0.1.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: Expected vs actual
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Reproduction
+      description: Commands, OS, browser
+      value: |
+        ```bash
+        ./scripts/mac-smoke.sh
+        ```
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Smoke / install
+        - Meeting Core
+        - Gateway / browser UI
+        - MCP
+        - Docs
+        - Docker
+        - Other
+    validations:
+      required: true

@@ -13,6 +13,13 @@
 - Mapping a speaker to a named person is operator-driven.
 - Voice biometric enrollment is **optional**, **separately consented**, **separately stored**, **exportable**, and **deletable**. Silent enrollment is a defect.
 
+### v0.1 prototype behavior
+
+- Browser UI requires an explicit consent checkbox before Start.
+- `POST /api/sessions` requires `"consent": true` (HTTP 400 otherwise).
+- This is a **local development control**, not a full multi-party legal consent workflow.
+- Do not deploy the gateway on a public network without additional auth, notices, and policy review.
+
 ## Biometrics
 
 Voiceprints are sensitive biometric data (GDPR special category / PIPL sensitive personal information). Meeting Core keeps identity adapters behind a consent flag; disabling biometrics must leave transcription/diarization usable.

@@ -1,60 +1,81 @@
 # Physical Meeting Copilot
 
-Open-source, provider-independent runtime for AI-assisted physical face-to-face meetings.
+**v0.1 preview** — open-source, provider-independent runtime for AI-assisted physical face-to-face meetings.
 
 > **The meeting runtime listens; the user’s personal AI understands.**
 
-Reference brains: Hermes and OpenClaw. Clients progress: browser/macOS prototype → iPhone → iPad.
+[简体中文](README.zh-CN.md) · [Status](docs/STATUS.md) · [Contributing](CONTRIBUTING.md) · [Mac quick start](docs/MAC.md)
+
+Reference integrations: [`integrations/hermes`](integrations/hermes), [`integrations/openclaw`](integrations/openclaw). Clients today: browser prototype → later iPhone / iPad.
 
 ## What this is
 
-A Meeting Core that captures room audio, transcribes (Mandarin + English), diarizes speakers, translates while preserving originals, maintains structured meeting state, and exposes that state to personal AI agents via MCP — without embedding assistant/CRM/research logic in the core.
+A **Meeting Core** that can capture room audio, maintain structured meeting state (transcript, speakers, claims, research, alerts), and expose that state to personal AI agents over **MCP** — without embedding assistant/CRM/research logic in the core.
 
-## Quick start (Mac / Linux)
+**v0.1 uses simulated ASR/diarization/translation.** Mic → server works; spoken words are **not** yet turned into real Mandarin/English text. The offline demo (`simulate_meeting`) is the supported vertical slice.
+
+## Supported languages (v0.1)
+
+| Role | Languages |
+|------|-----------|
+| Meeting speech pair | **Mandarin (`zh-CN`) + English (`en`)** only |
+| Project documentation | English (canonical) + Simplified Chinese README |
+| Future locales | Welcome as adapters later — not in MVP scope |
+
+Protocol fields are BCP-47-ready; contribution focus stays on this pair until a real ASR/MT adapter lands.
+
+## Quick start
 
 **Requires:** Python 3.11+ and [uv](https://github.com/astral-sh/uv).
 
 ```bash
 git clone https://github.com/Jensvatland/physical-meeting-copilot.git
 cd physical-meeting-copilot
-# until merged: git checkout cursor/complete-runtime-foundation-e10f
-
 chmod +x scripts/mac-smoke.sh
 ./scripts/mac-smoke.sh
 ```
 
-That offline smoke test needs **no microphone and no API keys**. Details: [docs/MAC.md](docs/MAC.md).
+No microphone and no API keys. Details: [docs/MAC.md](docs/MAC.md).
 
-### Optional: browser capture UI
+### Optional browser UI
 
 ```bash
 export MEETING_CORE_DB=~/.physical-meeting-copilot/meetings.db
 uv run meeting-gateway
-# open http://127.0.0.1:8787 — Chrome — allow mic — Start meeting
+# Chrome → http://127.0.0.1:8787 → accept consent → Start meeting
 ```
 
-> **Expectation:** mic → server works, but transcript text is still from a **simulated ASR** (`[sim:…]`). For the full claim → research → alert demo without speaking, rely on `simulate_meeting` (included in the smoke script).
+You will see a **Simulated ASR** notice. That is intentional in v0.1.
 
-### Optional: MCP for Hermes / OpenClaw
+### Optional MCP (Hermes / OpenClaw)
 
 ```bash
 export MEETING_CORE_DB=~/.physical-meeting-copilot/meetings.db
 uv run python -m meeting_mcp
 ```
 
-### Docker
+### Docker (sim stack)
 
 ```bash
 docker compose up --build
-# overlays: docker-compose.china.yml / docker-compose.global.yml
 ```
+
+## How to contribute
+
+We want help — especially on real speech adapters and eval fixtures.
+
+1. Read [CONTRIBUTING.md](CONTRIBUTING.md) and [docs/STATUS.md](docs/STATUS.md)
+2. Run `./scripts/mac-smoke.sh`
+3. Open a PR against the default branch
+
+Good first areas: docs clarity, eval scenarios, FunASR/LiveKit adapter wiring, UI polish (keep the sim banner until ASR is real).
 
 ## Architecture (summary)
 
 ```text
-PHYSICAL MEETING → Capture → Realtime media (LiveKit preferred / WebSocket slice)
+PHYSICAL MEETING → Capture → WebSocket (LiveKit later)
   → Meeting Core (events, transcript, claims, research, alerts)
-  → Realtime UI  |  Meeting MCP → Hermes / OpenClaw / other agents
+  → Browser UI  |  Meeting MCP → Hermes / OpenClaw / other agents
 ```
 
 See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
@@ -63,15 +84,14 @@ See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 | Doc | Purpose |
 |-----|---------|
-| [MAC.md](docs/MAC.md) | MacBook download + smoke + mic expectations |
-| [ARCHITECTURE.md](docs/ARCHITECTURE.md) | System design, planes, adapters |
-| [ROADMAP.md](docs/ROADMAP.md) | Phases 0–45 and acceptance criteria |
-| [PROTOCOL.md](docs/PROTOCOL.md) | Canonical event schema + MCP surface |
-| [DECISIONS.md](docs/DECISIONS.md) | ADR index |
-| [SECURITY.md](docs/SECURITY.md) | Threat model baseline |
-| [PRIVACY.md](docs/PRIVACY.md) | Consent, biometrics, retention |
-| [CHINA.md](docs/CHINA.md) | China-first deployment profile |
-| [LICENSES.md](docs/LICENSES.md) | Dependency license notes |
+| [STATUS.md](docs/STATUS.md) | What works vs simulated **today** |
+| [MAC.md](docs/MAC.md) | Mac/Linux download + smoke |
+| [ROADMAP.md](docs/ROADMAP.md) | MVP → v1.0 |
+| [PROTOCOL.md](docs/PROTOCOL.md) | Events + MCP surface |
+| [ARCHITECTURE.md](docs/ARCHITECTURE.md) | Planes and adapters |
+| [SECURITY.md](docs/SECURITY.md) / [PRIVACY.md](docs/PRIVACY.md) | Baseline threat & consent |
+| [CHINA.md](docs/CHINA.md) | China-first profile intent |
+| [LICENSES.md](docs/LICENSES.md) | Dependency notes |
 
 ## Design principles
 
@@ -82,10 +102,6 @@ See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 5. China is a first-class profile; OpenAI is never mandatory.
 6. Voice biometrics are optional, consent-based, separable, deletable.
 
-## Status
-
-Runtime foundation (phases 0–22) is in place with **sim adapters** where production ML/providers are optional. Offline smoke is the supported first test; real FunASR/LiveKit/Qwen and iOS come next. See [docs/ROADMAP.md](docs/ROADMAP.md).
-
 ## License
 
-Apache-2.0 for core code unless a dependency forces a narrower boundary (documented in `docs/LICENSES.md`).
+Apache-2.0 — see [LICENSE](LICENSE).

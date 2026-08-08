@@ -53,7 +53,11 @@ class GatewayState:
         self,
         title: str | None = None,
         pre_meeting: dict[str, Any] | None = None,
+        *,
+        consent: bool = False,
     ) -> tuple[str, RealtimeIngestPipeline]:
+        if not consent:
+            raise ValueError("consent_required")
         session = self.manager.create(title=title or "Live meeting")
         if pre_meeting:
             session.set_pre_meeting_context(pre_meeting)
@@ -68,12 +72,20 @@ STATE = GatewayState()
 
 
 async def health(_: Request) -> JSONResponse:
+    # LiveKit is preferred later but optional in v0.1 WebSocket MVP.
+    required = {k: v for k, v in STATE.adapters.items() if k != "livekit"}
+    optional = {"livekit": STATE.adapters["livekit"]}
     return JSONResponse(
         {
             "ok": True,
             "service": "meeting-gateway",
+            "version": "0.1.0",
+            "mvp": True,
+            "asr": "simulated",
+            "languages": ["zh-CN", "en"],
             "db": _db_path(),
-            "adapters": aggregate_health(STATE.adapters),
+            "adapters": aggregate_health(required),
+            "optional_adapters": aggregate_health(optional),
         }
     )
 
@@ -82,8 +94,30 @@ async def start_session(request: Request) -> JSONResponse:
     body: dict[str, Any] = {}
     if request.headers.get("content-type", "").startswith("application/json"):
         body = await request.json()
-    sid, _ = STATE.ensure_session(title=body.get("title"), pre_meeting=body.get("pre_meeting"))
-    return JSONResponse({"session_id": sid, "ws_url": f"/ws/audio/{sid}"})
+    if not body.get("consent"):
+        return JSONResponse(
+            {
+                "error": "consent_required",
+                "message": "Recording/analysis requires explicit consent=true in the request body.",
+            },
+            status_code=400,
+        )
+    try:
+        sid, _ = STATE.ensure_session(
+            title=body.get("title"),
+            pre_meeting=body.get("pre_meeting"),
+            consent=True,
+        )
+    except ValueError as exc:
+        return JSONResponse({"error": str(exc)}, status_code=400)
+    return JSONResponse(
+        {
+            "session_id": sid,
+            "ws_url": f"/ws/audio/{sid}",
+            "asr": "simulated",
+            "languages": ["zh-CN", "en"],
+        }
+    )
 
 
 async def list_sessions(_: Request) -> JSONResponse:
@@ -235,7 +269,8 @@ routes = [
 if WEB_DIR.exists():
     routes.append(Mount("/static", StaticFiles(directory=str(WEB_DIR)), name="static"))
 
-app = Starlette(debug=True, routes=routes)
+_debug = os.environ.get("MEETING_GATEWAY_DEBUG", "").lower() in {"1", "true", "yes"}
+app = Starlette(debug=_debug, routes=routes)
 
 
 def main() -> None:
@@ -244,12 +279,13 @@ def main() -> None:
     host = os.environ.get("MEETING_GATEWAY_HOST", "127.0.0.1")
     port = int(os.environ.get("MEETING_GATEWAY_PORT", "8787"))
     db = _db_path()
-    print("Physical Meeting Copilot — meeting-gateway")
+    print("Physical Meeting Copilot — meeting-gateway (v0.1 MVP)")
     print(f"  UI:      http://{host}:{port}")
     print(f"  DB:      {db}")
+    print("  Languages: zh-CN + en")
     print("  Capture: browser mic → WebSocket PCM (LiveKit optional)")
-    print("  ASR/MT:  simulated adapters (real speech text requires FunASR/Qwen later)")
-    print("  Tip:     use Chrome; allow microphone; run scripts/mac-smoke.sh first")
+    print("  ASR/MT:  SIMULATED — real speech text needs FunASR/Qwen adapters")
+    print("  Tip:     Chrome + consent checkbox; run scripts/mac-smoke.sh first")
     uvicorn.run("meeting_gateway.app:app", host=host, port=port, reload=False)
 
 
