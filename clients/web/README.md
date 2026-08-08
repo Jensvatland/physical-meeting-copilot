@@ -1,17 +1,18 @@
 # Browser client
 
-Phase 2 vertical slice lives in `public/index.html`.
+Copilot prototype UI in `public/index.html`.
 
 ## Run
 
 ```bash
+export MEETING_CORE_DB=~/.physical-meeting-copilot/meetings.db
 uv run meeting-gateway
 ```
 
-Open `http://127.0.0.1:8787`. The page captures microphone PCM, downsamples to 16 kHz, and streams base64 frames over WebSocket to Meeting Core.
+Open `http://127.0.0.1:8787`. The page captures microphone PCM, downsamples to 16 kHz, and streams frames over WebSocket to Meeting Core. Side panels show people, alerts, findings, suggested questions, and research status.
 
 ## Notes
 
 - LiveKit remains the preferred production realtime transport.
 - This WebSocket path exists so local demos work without cloud credentials.
-- Phase 6 expands the full Copilot UI (alerts, People, Ask Agent, research).
+- Point MCP at the same `MEETING_CORE_DB` so Hermes/OpenClaw can inspect the live session.

@@ -8,10 +8,29 @@ Phases are complete only when code, tests, docs, fallbacks, license notes, and a
 |------:|------|--------|
 | 0 | Repository / architecture | **done** |
 | 1 | Meeting Core | **done** |
-| 2 | Live audio (WebSocket vertical slice) | **partial** (PCM ingest + VAD + sim ASR; LiveKit SDK pending) |
-| 3/5 | Transcription + translation adapters | **partial** (sim + FunASR stub; Mandarin retained with EN translation) |
-| 7 | Meeting MCP (façade) | **partial** (tools/resources + tests; stdio transport TBD) |
-| 2–45 | See below | planned |
+| 2 | Live audio (WebSocket vertical slice) | **done** (PCM ingest + VAD + sim diarization/ASR; LiveKit SDK optional stub) |
+| 3 | Live transcription | **partial** (sim ASR + FunASR stub; Mandarin retained) |
+| 4 | Diarization | **done** (sim adapter + speaker.turn; production models TBD) |
+| 5 | Translation | **partial** (glossary sim; Qwen adapter TBD) |
+| 6 | Browser UI | **done** (transcript, people, alerts, findings, questions, research) |
+| 7 | Meeting MCP | **done** (resources/tools + stdio MCP SDK transport) |
+| 8 | Hermes | **done** (event bridge + non-blocking research vertical slice) |
+| 9 | Private speech | **done** (sim TTS + queued/spoken events; AirPods path TBD) |
+| 10 | OpenClaw | **done** (event bridge + mcp.json; same core unchanged) |
+| 11 | China profile | **partial** (`docker-compose.china.yml` + FunASR stub) |
+| 12 | Evaluation suite | **done** (one-command harness; expand scenarios ongoing) |
+| 13 | Reliability / fallbacks | **partial** (health aggregate, crash-safe SQLite; full matrix TBD) |
+| 14 | Security / privacy baseline | **partial** (consent, audit log, biometric clear, deletion) |
+| 15 | Pre-meeting context | **done** |
+| 16 | Intelligence primitives | **done** (heuristic numbers/dates/prices/risks) |
+| 17 | Background research lifecycle | **done** |
+| 18 | Contradiction / change detection | **done** (prior_facts compare) |
+| 19 | Post-meeting package | **done** |
+| 20 | Session history API | **done** (list/search/delete via manager + MCP) |
+| 21 | Storage abstraction | **partial** (SQLite + memory; Postgres stub) |
+| 22 | Self-hosting | **done** (Docker Compose + health + env templates) |
+| 23–29 | Profiles / adapters / hardware | planned / stubs |
+| 30–45 | iOS + production | planned |
 
 ## Phases 0–29 (runtime foundation)
 
@@ -31,7 +50,7 @@ Sessions, event bus, schemas, participants/speakers, transcript/translation stor
 
 Browser mic → LiveKit → backend; VAD/timestamps/sync.
 
-**Accept:** Physical speech enters core live.
+**Accept:** Physical speech enters core live. *(WebSocket PCM path satisfies acceptance; LiveKit preferred for production.)*
 
 ### 3 — Live transcription
 
@@ -73,7 +92,7 @@ Skill + MCP/event bridge. Demo material claim → background research + suggeste
 
 Mac→AirPods TTS, priority queue/interruption.
 
-**Accept:** Private Hermes alert while capture continues.
+**Accept:** Private Hermes alert while capture continues. *(Sim TTS lifecycle done; device path TBD.)*
 
 ### 10 — OpenClaw
 

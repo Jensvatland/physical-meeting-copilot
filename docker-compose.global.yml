@@ -1,0 +1,14 @@
+# Global profile — optional cloud adapters via env; OpenAI never mandatory.
+services:
+  meeting-gateway:
+    extends:
+      file: docker-compose.yml
+      service: meeting-gateway
+    environment:
+      MEETING_CORE_DB: /data/meetings.db
+      MEETING_GATEWAY_HOST: 0.0.0.0
+      MEETING_PROFILE: global
+      # LIVEKIT_URL: ${LIVEKIT_URL:-}
+      # LIVEKIT_API_KEY: ${LIVEKIT_API_KEY:-}
+      # LIVEKIT_API_SECRET: ${LIVEKIT_API_SECRET:-}
+      # OPENAI_API_KEY: ${OPENAI_API_KEY:-}

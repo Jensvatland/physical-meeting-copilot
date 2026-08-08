@@ -42,6 +42,21 @@ class ClaimState(StrEnum):
     INSUFFICIENT_INFORMATION = "INSUFFICIENT_INFORMATION"
 
 
+class ResearchStatus(StrEnum):
+    STARTED = "STARTED"
+    COMPLETED = "COMPLETED"
+    STALE = "STALE"
+    FAILED = "FAILED"
+
+
+class PrimitiveKind(StrEnum):
+    NUMBER = "number"
+    DEADLINE = "deadline"
+    RISK = "risk"
+    PRICE = "price"
+    COMMITMENT_HINT = "commitment_hint"
+
+
 class Provenance(BaseModel):
     adapter: str | None = None
     model: str | None = None
@@ -171,12 +186,67 @@ class Alert(BaseModel):
     created_at: datetime = Field(default_factory=utc_now)
 
 
+class PreMeetingContext(BaseModel):
+    agenda: list[str] = Field(default_factory=list)
+    goals: list[str] = Field(default_factory=list)
+    watch_items: list[str] = Field(default_factory=list)
+    prior_session_ids: list[str] = Field(default_factory=list)
+    files: list[dict[str, Any]] = Field(default_factory=list)
+    expected_participants: list[dict[str, Any]] = Field(default_factory=list)
+    prior_facts: list[dict[str, Any]] = Field(default_factory=list)
+    notes: str | None = None
+
+
+class ResearchJob(BaseModel):
+    research_id: str = Field(default_factory=new_id)
+    session_id: str
+    correlation_id: str = Field(default_factory=new_id)
+    query: str
+    status: ResearchStatus = ResearchStatus.STARTED
+    trigger_event_type: str | None = None
+    result_summary: str | None = None
+    evidence: list[dict[str, Any]] = Field(default_factory=list)
+    started_at: datetime = Field(default_factory=utc_now)
+    completed_at: datetime | None = None
+    stale: bool = False
+
+
+class PrivateSpeechItem(BaseModel):
+    speech_id: str = Field(default_factory=new_id)
+    session_id: str
+    text: str
+    priority: int = 80
+    language: str = "en"
+    spoken: bool = False
+    interrupted: bool = False
+    correlation_id: str | None = None
+    audio_bytes_len: int = 0
+    created_at: datetime = Field(default_factory=utc_now)
+    spoken_at: datetime | None = None
+
+
+class IntelligencePrimitive(BaseModel):
+    primitive_id: str = Field(default_factory=new_id)
+    session_id: str
+    kind: PrimitiveKind
+    text: str
+    normalized: str | None = None
+    value: float | None = None
+    unit: str | None = None
+    speaker_id: str | None = None
+    source_segment_id: str | None = None
+    confidence: float | None = None
+    created_at: datetime = Field(default_factory=utc_now)
+
+
 class SessionConfig(BaseModel):
     mode: MeetingMode = MeetingMode.COPILOT
     source_languages: list[str] = Field(default_factory=lambda: ["zh-CN", "en"])
     target_language: str = "en"
     alert_threshold: int = 40
     biometrics_enabled: bool = False
+    retention_hours: int | None = None
+    consent_recorded: bool = False
 
 
 class SessionState(BaseModel):
@@ -197,6 +267,11 @@ class SessionState(BaseModel):
     questions: list[Question] = Field(default_factory=list)
     findings: list[Finding] = Field(default_factory=list)
     alerts: list[Alert] = Field(default_factory=list)
+    pre_meeting: PreMeetingContext = Field(default_factory=PreMeetingContext)
+    research: list[ResearchJob] = Field(default_factory=list)
+    private_speech: list[PrivateSpeechItem] = Field(default_factory=list)
+    primitives: list[IntelligencePrimitive] = Field(default_factory=list)
+    audit_log: list[dict[str, Any]] = Field(default_factory=list)
 
     def summary(self) -> dict[str, Any]:
         return {
@@ -215,6 +290,17 @@ class SessionState(BaseModel):
             "open_questions": sum(1 for q in self.questions if not q.answered),
             "findings": len(self.findings),
             "alerts": len(self.alerts),
+            "research_jobs": len(self.research),
+            "open_research": sum(1 for r in self.research if r.status == ResearchStatus.STARTED),
+            "primitives": len(self.primitives),
+            "private_speech_queued": sum(1 for p in self.private_speech if not p.spoken),
+            "consent_recorded": self.config.consent_recorded,
+            "has_pre_meeting": bool(
+                self.pre_meeting.agenda
+                or self.pre_meeting.goals
+                or self.pre_meeting.watch_items
+                or self.pre_meeting.prior_facts
+            ),
             "started_at": self.started_at.isoformat() if self.started_at else None,
             "ended_at": self.ended_at.isoformat() if self.ended_at else None,
         }

@@ -1,15 +1,48 @@
-"""Phase 1 acceptance: simulated multi-speaker Mandarin/English meeting."""
+"""Phase 1+ acceptance: simulated multi-speaker Mandarin/English meeting with research slice."""
 
 from __future__ import annotations
+
+import asyncio
+import sys
+from pathlib import Path
 
 from meeting_core.domain.models import ClaimState
 from meeting_core.session import MeetingSession
 from meeting_core.storage.sqlite import SqliteStorageAdapter
 
+# Allow running Hermes bridge from repo integrations/ without packaging it.
+_ROOT = Path(__file__).resolve().parents[5]
+_HERMES = _ROOT / "integrations" / "hermes"
+if _HERMES.exists() and str(_HERMES) not in sys.path:
+    sys.path.insert(0, str(_HERMES.parent))
+
 
 def run_simulation() -> dict:
+    return asyncio.run(_run_simulation_async())
+
+
+async def _run_simulation_async() -> dict:
+    from hermes.event_bridge import HermesEventBridge
+
     storage = SqliteStorageAdapter(":memory:")
     session = MeetingSession(storage=storage, title="Shipyard capacity negotiation")
+    session.record_consent(recorded=True)
+    session.set_pre_meeting_context(
+        {
+            "agenda": ["Capacity confirmation", "Delivery date", "Warranty"],
+            "goals": ["Detect material claim mismatches"],
+            "watch_items": ["capacity", "price", "warranty", "delivery"],
+            "prior_facts": [
+                {"topic": "capacity", "value": 4200, "unit": "tons", "note": "Previous usable EOL capacity"}
+            ],
+            "expected_participants": [
+                {"display_name": "Li Wei", "role": "Sales"},
+                {"display_name": "User", "role": "Buyer"},
+            ],
+        }
+    )
+    bridge = HermesEventBridge(auto_research=True, research_delay_s=0.01)
+    bridge.attach(session)
     session.start()
 
     turns = [
@@ -42,26 +75,16 @@ def run_simulation() -> dict:
         original_text="我们这台设备的额定容量是五千吨。",
         speaker_id="spk_1",
     )
-    session.update_claim(
-        claim.claim_id,
-        state=ClaimState.CONTRADICTED_PROJECT_SOURCE,
-        evidence=[{"source": "prior_spec", "note": "Previous usable EOL capacity was 4200 tons"}],
-    )
+    # Let Hermes auto-research finish (scheduled on running loop).
+    await asyncio.sleep(0.05)
+    if claim.state == ClaimState.UNVERIFIED:
+        session.update_claim(
+            claim.claim_id,
+            state=ClaimState.CONTRADICTED_PROJECT_SOURCE,
+            evidence=[{"source": "prior_spec", "note": "Previous usable EOL capacity was 4200 tons"}],
+        )
     session.record_commitment("Delivery by 2026-09-15", speaker_id="spk_1", due_date="2026-09-15")
-    session.record_question("Is the quoted capacity nominal or usable at end of life?", suggested=True)
-    finding = session.publish_finding(
-        "Capacity claim conflicts with previous specification",
-        detail="Ask whether 5000t is nominal or usable at EOL.",
-        correlation_id=claim.claim_id,
-        severity="high",
-        evidence=[{"claim_id": claim.claim_id}],
-    )
-    session.push_private_alert(
-        "That conflicts with the previous specification. "
-        "Ask whether the quoted capacity is nominal or usable at end of life.",
-        priority=90,
-        correlation_id=finding.finding_id,
-    )
+    package = session.export_package()
     session.stop()
 
     reloaded = storage.load_session(session.state.session_id)
@@ -72,6 +95,11 @@ def run_simulation() -> dict:
         "summary": summary,
         "speakers": reloaded.speakers,
         "events": len(session.bus.history),
+        "research_jobs": len(reloaded.research),
+        "primitives": len(reloaded.primitives),
+        "export_keys": sorted(package.keys()),
+        "hermes_forwarded": len(bridge.forwarded),
+        "claim_state": next(c.state.value for c in reloaded.claims),
     }
 
 
@@ -82,6 +110,10 @@ def main() -> None:
     print(f"  speakers: {result['speakers']}")
     print(f"  summary: {result['summary']}")
     print(f"  events: {result['events']}")
+    print(f"  research_jobs: {result['research_jobs']}")
+    print(f"  primitives: {result['primitives']}")
+    print(f"  claim_state: {result['claim_state']}")
+    print(f"  hermes_forwarded: {result['hermes_forwarded']}")
 
 
 if __name__ == "__main__":
