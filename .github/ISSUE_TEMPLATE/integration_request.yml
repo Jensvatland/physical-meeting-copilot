@@ -1,0 +1,43 @@
+name: Integration Request
+description: Request or propose a host, provider, or system integration
+title: "[integration] "
+labels: ["integration"]
+body:
+  - type: dropdown
+    id: kind
+    attributes:
+      label: Integration kind
+      options:
+        - Hermes
+        - OpenClaw
+        - MCP client
+        - Model provider
+        - STT provider
+        - Translation provider
+        - TTS provider
+        - CRM system
+        - Knowledge system
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem / use case
+      description: What should become possible?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed integration shape
+      description: Prefer thin bridges under integrations/ or adapters — not core business logic
+    validations:
+      required: true
+  - type: textarea
+    id: references
+    attributes:
+      label: References
+      description: Docs, APIs, prior art, related issues
+    validations:
+      required: false

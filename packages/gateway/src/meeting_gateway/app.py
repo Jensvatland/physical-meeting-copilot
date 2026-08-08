@@ -2,6 +2,7 @@
 
 LiveKit remains the preferred production transport (see LiveKitTransportAdapter).
 This WebSocket path is the Phase 2 vertical slice that works without cloud creds.
+Shares MEETING_CORE_DB with the MCP server so agents can inspect live sessions.
 """
 
 from __future__ import annotations
@@ -12,7 +13,13 @@ import os
 from pathlib import Path
 from typing import Any
 
+from meeting_core.adapters.asr.sim import SimulatedSpeechRecognitionAdapter
+from meeting_core.adapters.diarization.sim import SimulatedDiarizationAdapter
+from meeting_core.adapters.realtime.livekit_stub import LiveKitTransportAdapter
+from meeting_core.adapters.translation.sim import SimulatedTranslationAdapter
+from meeting_core.adapters.tts.sim import SimulatedTextToSpeechAdapter
 from meeting_core.realtime.pipeline import RealtimeIngestPipeline
+from meeting_core.reliability.health import aggregate_health
 from meeting_core.session import MeetingSessionManager
 from meeting_core.storage.sqlite import SqliteStorageAdapter
 from starlette.applications import Starlette
@@ -25,17 +32,40 @@ from starlette.websockets import WebSocket
 WEB_DIR = Path(__file__).resolve().parents[4] / "clients" / "web" / "public"
 
 
+_DEFAULT_DB = "~/.physical-meeting-copilot/meetings.db"
+
+
 def _db_path() -> str:
-    return os.path.expanduser(os.environ.get("MEETING_CORE_DB", ":memory:"))
+    # Shared default with MCP so `uv run meeting-gateway` needs no export.
+    return os.path.expanduser(os.environ.get("MEETING_CORE_DB", _DEFAULT_DB))
 
 
 class GatewayState:
     def __init__(self) -> None:
         self.manager = MeetingSessionManager(storage=SqliteStorageAdapter(_db_path()))
         self.pipelines: dict[str, RealtimeIngestPipeline] = {}
+        self.adapters = {
+            "asr": SimulatedSpeechRecognitionAdapter(),
+            "translation": SimulatedTranslationAdapter(),
+            "diarization": SimulatedDiarizationAdapter(),
+            "tts": SimulatedTextToSpeechAdapter(),
+            "livekit": LiveKitTransportAdapter(),
+            "storage": self.manager.storage,
+        }
 
-    def ensure_session(self, title: str | None = None) -> tuple[str, RealtimeIngestPipeline]:
+    def ensure_session(
+        self,
+        title: str | None = None,
+        pre_meeting: dict[str, Any] | None = None,
+        *,
+        consent: bool = False,
+    ) -> tuple[str, RealtimeIngestPipeline]:
+        if not consent:
+            raise ValueError("consent_required")
         session = self.manager.create(title=title or "Live meeting")
+        if pre_meeting:
+            session.set_pre_meeting_context(pre_meeting)
+        session.record_consent(recorded=True)
         session.start()
         pipeline = RealtimeIngestPipeline(session=session)
         self.pipelines[session.state.session_id] = pipeline
@@ -46,15 +76,56 @@ STATE = GatewayState()
 
 
 async def health(_: Request) -> JSONResponse:
-    return JSONResponse({"ok": True, "service": "meeting-gateway"})
+    # LiveKit is preferred later but optional in v0.1 WebSocket MVP.
+    required = {k: v for k, v in STATE.adapters.items() if k != "livekit"}
+    optional = {"livekit": STATE.adapters["livekit"]}
+    return JSONResponse(
+        {
+            "ok": True,
+            "service": "meeting-gateway",
+            "version": "0.1.0",
+            "mvp": True,
+            "asr": "simulated",
+            "languages": ["zh-CN", "en"],
+            "db": _db_path(),
+            "adapters": aggregate_health(required),
+            "optional_adapters": aggregate_health(optional),
+        }
+    )
 
 
 async def start_session(request: Request) -> JSONResponse:
-    body = {}
+    body: dict[str, Any] = {}
     if request.headers.get("content-type", "").startswith("application/json"):
         body = await request.json()
-    sid, _ = STATE.ensure_session(title=body.get("title"))
-    return JSONResponse({"session_id": sid, "ws_url": f"/ws/audio/{sid}"})
+    if not body.get("consent"):
+        return JSONResponse(
+            {
+                "error": "consent_required",
+                "message": "Recording/analysis requires explicit consent=true in the request body.",
+            },
+            status_code=400,
+        )
+    try:
+        sid, _ = STATE.ensure_session(
+            title=body.get("title"),
+            pre_meeting=body.get("pre_meeting"),
+            consent=True,
+        )
+    except ValueError as exc:
+        return JSONResponse({"error": str(exc)}, status_code=400)
+    return JSONResponse(
+        {
+            "session_id": sid,
+            "ws_url": f"/ws/audio/{sid}",
+            "asr": "simulated",
+            "languages": ["zh-CN", "en"],
+        }
+    )
+
+
+async def list_sessions(_: Request) -> JSONResponse:
+    return JSONResponse({"sessions": STATE.manager.list_sessions()})
 
 
 async def session_state(request: Request) -> JSONResponse:
@@ -62,7 +133,48 @@ async def session_state(request: Request) -> JSONResponse:
     session = STATE.manager.get(sid)
     if not session:
         return JSONResponse({"error": "not found"}, status_code=404)
+    return JSONResponse(session.get_recent_context(limit=30))
+
+
+async def session_summary(request: Request) -> JSONResponse:
+    sid = request.path_params["session_id"]
+    session = STATE.manager.get(sid)
+    if not session:
+        return JSONResponse({"error": "not found"}, status_code=404)
     return JSONResponse(session.state.summary())
+
+
+async def stop_session(request: Request) -> JSONResponse:
+    sid = request.path_params["session_id"]
+    session = STATE.manager.get(sid)
+    if not session:
+        return JSONResponse({"error": "not found"}, status_code=404)
+    session.stop()
+    return JSONResponse(session.state.summary())
+
+
+async def export_session(request: Request) -> JSONResponse:
+    sid = request.path_params["session_id"]
+    session = STATE.manager.get(sid)
+    if not session:
+        return JSONResponse({"error": "not found"}, status_code=404)
+    return JSONResponse(session.export_package())
+
+
+async def assign_speaker(request: Request) -> JSONResponse:
+    sid = request.path_params["session_id"]
+    session = STATE.manager.get(sid)
+    if not session:
+        return JSONResponse({"error": "not found"}, status_code=404)
+    body = await request.json()
+    p = session.assign_speaker(
+        body["speaker_id"],
+        display_name=body["display_name"],
+        role=body.get("role"),
+        company=body.get("company"),
+        seat_position=body.get("seat_position"),
+    )
+    return JSONResponse(p.model_dump(mode="json"))
 
 
 async def audio_ws(websocket: WebSocket) -> None:
@@ -76,7 +188,7 @@ async def audio_ws(websocket: WebSocket) -> None:
         pipeline = RealtimeIngestPipeline(session=session)
         STATE.pipelines[sid] = pipeline
     await websocket.accept()
-    await websocket.send_json({"type": "ready", "session_id": sid})
+    await websocket.send_json({"type": "ready", "session_id": sid, "summary": pipeline.session.state.summary()})
     try:
         while True:
             message = await websocket.receive()
@@ -87,9 +199,8 @@ async def audio_ws(websocket: WebSocket) -> None:
                 await _handle_json_audio(pipeline, websocket, data)
             elif "bytes" in message and message["bytes"] is not None:
                 result = await pipeline.on_audio(message["bytes"], timestamp_ms=0)
-                await websocket.send_json(_public_result(result))
+                await websocket.send_json(_public_result(result, pipeline))
     finally:
-        # Keep session alive for MCP inspection; client may call stop later.
         pass
 
 
@@ -102,21 +213,37 @@ async def _handle_json_audio(pipeline: RealtimeIngestPipeline, websocket: WebSoc
         if data.get("language_hint"):
             pipeline.language_hint = str(data["language_hint"])
         result = await pipeline.on_audio(pcm, timestamp_ms=ts)
-        await websocket.send_json(_public_result(result))
+        await websocket.send_json(_public_result(result, pipeline))
     elif data.get("type") == "stop":
         pipeline.session.stop()
-        await websocket.send_json({"type": "stopped", "summary": pipeline.session.state.summary()})
+        await websocket.send_json(
+            {
+                "type": "stopped",
+                "summary": pipeline.session.state.summary(),
+                "export": pipeline.session.export_package(),
+            }
+        )
+    elif data.get("type") == "ping":
+        await websocket.send_json({"type": "pong", "summary": pipeline.session.state.summary()})
 
 
-def _public_result(result: dict[str, Any]) -> dict[str, Any]:
+def _public_result(result: dict[str, Any], pipeline: RealtimeIngestPipeline) -> dict[str, Any]:
     vad = result["vad"]
+    state = pipeline.session.state
     return {
         "type": "ingest",
         "active": vad.active,
         "rms": vad.rms,
         "timestamp_ms": vad.timestamp_ms,
+        "speaker_id": result.get("speaker_id"),
+        "diarization": result.get("diarization"),
         "transcript": result.get("transcript"),
         "translation": result.get("translation"),
+        "speakers": state.speakers,
+        "alerts": [a.model_dump(mode="json") for a in state.alerts[-5:]],
+        "findings": [f.model_dump(mode="json") for f in state.findings[-5:]],
+        "questions": [q.model_dump(mode="json") for q in state.questions if not q.answered][-5:],
+        "research": [r.model_dump(mode="json") for r in state.research[-5:]],
     }
 
 
@@ -134,14 +261,20 @@ routes = [
     Route("/", index),
     Route("/health", health),
     Route("/api/sessions", start_session, methods=["POST"]),
-    Route("/api/sessions/{session_id}", session_state),
+    Route("/api/sessions", list_sessions, methods=["GET"]),
+    Route("/api/sessions/{session_id}", session_summary),
+    Route("/api/sessions/{session_id}/context", session_state),
+    Route("/api/sessions/{session_id}/stop", stop_session, methods=["POST"]),
+    Route("/api/sessions/{session_id}/export", export_session),
+    Route("/api/sessions/{session_id}/speakers", assign_speaker, methods=["POST"]),
     WebSocketRoute("/ws/audio/{session_id}", audio_ws),
 ]
 
 if WEB_DIR.exists():
     routes.append(Mount("/static", StaticFiles(directory=str(WEB_DIR)), name="static"))
 
-app = Starlette(debug=True, routes=routes)
+_debug = os.environ.get("MEETING_GATEWAY_DEBUG", "").lower() in {"1", "true", "yes"}
+app = Starlette(debug=_debug, routes=routes)
 
 
 def main() -> None:
@@ -149,6 +282,20 @@ def main() -> None:
 
     host = os.environ.get("MEETING_GATEWAY_HOST", "127.0.0.1")
     port = int(os.environ.get("MEETING_GATEWAY_PORT", "8787"))
+    db = _db_path()
+    print("Physical Meeting Copilot — meeting-gateway (v0.1 MVP)")
+    print(f"  UI:      http://{host}:{port}")
+    print(f"  DB:      {db}")
+    print("  Languages: zh-CN + en")
+    print("  Capture: browser mic → WebSocket PCM (LiveKit optional)")
+    print("  ASR/MT:  SIMULATED — real speech text needs FunASR/Qwen adapters")
+    print("  Tip:     Chrome + consent checkbox; run scripts/mac-smoke.sh first")
+    if host not in {"127.0.0.1", "localhost", "::1"}:
+        print(
+            "  WARNING: gateway has no authentication yet; "
+            f"binding to {host!r} exposes an open meeting API on your network. "
+            "Prefer MEETING_GATEWAY_HOST=127.0.0.1 for local demos."
+        )
     uvicorn.run("meeting_gateway.app:app", host=host, port=port, reload=False)
 
 

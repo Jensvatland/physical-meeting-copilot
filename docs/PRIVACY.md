@@ -1,5 +1,13 @@
 # Privacy
 
+## Operator responsibility
+
+Physical Meeting Copilot can record, transcribe, translate, and analyze real conversations.
+
+**You (the operator / deployer) are responsible for complying with applicable laws and for obtaining any required consent before recording, transcribing, or otherwise processing meetings or biometric data.**
+
+This document describes product principles and technical defaults. It is **not** country-by-country legal advice.
+
 ## Principles
 
 1. Recording and analysis require **explicit, informed consent**.
@@ -12,6 +20,14 @@
 - Session start must surface recording/analysis status to the operator.
 - Mapping a speaker to a named person is operator-driven.
 - Voice biometric enrollment is **optional**, **separately consented**, **separately stored**, **exportable**, and **deletable**. Silent enrollment is a defect.
+- Do not commit real meeting recordings, transcripts, or personal data to the repository or shared fixtures.
+
+### v0.1 prototype behavior
+
+- Browser UI requires an explicit consent checkbox before Start.
+- `POST /api/sessions` requires `"consent": true` (HTTP 400 otherwise).
+- This is a **local development control**, not a full multi-party legal consent workflow.
+- Do not deploy the gateway on a public network without additional auth, notices, and policy review.
 
 ## Biometrics
 

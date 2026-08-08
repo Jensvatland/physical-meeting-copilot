@@ -18,3 +18,11 @@ htmlcov/
 node_modules/
 .idea/
 .vscode/
+*.wav
+*.mp3
+*.m4a
+*.webm
+*.flac
+recordings/
+transcripts/
+!.gitkeep

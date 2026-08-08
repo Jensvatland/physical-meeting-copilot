@@ -1,4 +1,7 @@
-# Security
+# Security (architecture)
+
+Reporting process: see root [SECURITY.md](../SECURITY.md).
+
 
 Baseline threat model for Physical Meeting Copilot. Expanded checks land in Phase 14 / 43.
 
@@ -38,9 +41,14 @@ Baseline threat model for Physical Meeting Copilot. Expanded checks land in Phas
 - No biometric enrollment without separate consent
 - Minimum retention; explicit deletion APIs (Phase 14)
 - Provider credentials only via environment / secret store — never committed
+- Local demos should bind the gateway to `127.0.0.1`; do not expose unauthenticated Docker/gateway ports to the public internet
 
 ## Automated checks (Phase 0+)
 
 - CI secret scanning hygiene via not committing `.env`
+- GitHub CodeQL workflow (`.github/workflows/codeql.yml`)
+- Dependabot for `uv` and GitHub Actions (`.github/dependabot.yml`)
 - License review before new dependencies (`docs/LICENSES.md`)
 - Unit tests for consent gates on speaker identity APIs
+
+Vulnerability reporting process: [SECURITY.md](../SECURITY.md) at the repository root.

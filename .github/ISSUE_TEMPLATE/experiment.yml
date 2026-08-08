@@ -1,0 +1,54 @@
+name: Experiment / Research
+description: Propose an experiment (STT, diarization, models, hardware, latency, agents)
+title: "[experiment] "
+labels: ["experiment"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Experiments are welcome. You do not need permission to try things in a fork.
+        Use this issue to share intent, results, or a path toward merging.
+  - type: dropdown
+    id: area
+    attributes:
+      label: Experiment area
+      options:
+        - Alternative STT engine
+        - Diarization
+        - Translation approach
+        - Local models
+        - Chinese models / China profile
+        - Audio hardware
+        - Latency improvements
+        - MCP integrations
+        - Agent integrations
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: hypothesis
+    attributes:
+      label: Hypothesis / goal
+      description: What are you trying to learn or prove?
+    validations:
+      required: true
+  - type: textarea
+    id: approach
+    attributes:
+      label: Approach
+      description: Methods, models, hardware, datasets (synthetic only in-repo)
+    validations:
+      required: true
+  - type: textarea
+    id: success
+    attributes:
+      label: What would “interesting success” look like?
+    validations:
+      required: false
+  - type: textarea
+    id: risks
+    attributes:
+      label: Risks / constraints
+      description: Privacy, licenses, latency, maintainability, provider lock-in
+    validations:
+      required: false

@@ -1,0 +1,22 @@
+# Default self-host stack (SQLite + gateway) — v0.1 SIM adapters.
+# See docker-compose.china.yml / docker-compose.global.yml for profile labels (not real model stacks yet).
+services:
+  meeting-gateway:
+    build: .
+    image: physical-meeting-copilot:local
+    ports:
+      - "8787:8787"
+    environment:
+      MEETING_CORE_DB: /data/meetings.db
+      MEETING_GATEWAY_HOST: 0.0.0.0
+      MEETING_GATEWAY_PORT: "8787"
+    volumes:
+      - meeting-data:/data
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8787/health')"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  meeting-data:

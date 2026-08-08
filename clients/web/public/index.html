@@ -18,6 +18,7 @@
         --muted: #9bb5a8;
         --accent: #d6a45b;
         --line: rgba(231, 242, 236, 0.12);
+        --danger: #e08a6a;
       }
       * { box-sizing: border-box; }
       body {
@@ -31,7 +32,7 @@
           linear-gradient(160deg, var(--bg0), var(--bg1));
       }
       main {
-        max-width: 720px;
+        max-width: 1080px;
         margin: 0 auto;
         padding: 2.5rem 1.25rem 3rem;
       }
@@ -40,18 +41,21 @@
         font-weight: 700;
         letter-spacing: -0.03em;
         margin: 0 0 0.35rem;
+        animation: rise 0.7s ease both;
       }
       .lede {
         color: var(--muted);
         margin: 0 0 1.75rem;
-        max-width: 36rem;
+        max-width: 40rem;
         line-height: 1.45;
+        animation: rise 0.8s ease both;
       }
       .controls {
         display: flex;
         flex-wrap: wrap;
         gap: 0.75rem;
         margin-bottom: 1.25rem;
+        animation: rise 0.9s ease both;
       }
       button {
         font: inherit;
@@ -62,7 +66,9 @@
         background: var(--accent);
         color: #1a1208;
         font-weight: 600;
+        transition: transform 0.15s ease, opacity 0.15s ease;
       }
+      button:hover:not(:disabled) { transform: translateY(-1px); }
       button.secondary {
         background: transparent;
         color: var(--ink);
@@ -75,42 +81,154 @@
         color: var(--muted);
         margin-bottom: 1rem;
       }
-      .feed {
+      .layout {
+        display: grid;
+        gap: 1.25rem;
+      }
+      @media (min-width: 860px) {
+        .layout { grid-template-columns: 1.4fr 1fr; align-items: start; }
+      }
+      .feed, .side {
         border-top: 1px solid var(--line);
         padding-top: 1rem;
-        display: grid;
-        gap: 0.75rem;
       }
+      .feed { display: grid; gap: 0.75rem; }
       .seg {
         font-family: "IBM Plex Mono", monospace;
         font-size: 0.92rem;
         line-height: 1.4;
+        animation: fadein 0.35s ease both;
       }
       .seg .meta { color: var(--muted); font-size: 0.75rem; margin-bottom: 0.2rem; }
+      .panel h2 {
+        margin: 0 0 0.6rem;
+        font-size: 0.95rem;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        color: var(--muted);
+        font-weight: 600;
+      }
+      .panel + .panel { margin-top: 1.25rem; }
+      .item {
+        font-size: 0.9rem;
+        line-height: 1.35;
+        padding: 0.45rem 0;
+        border-bottom: 1px solid var(--line);
+      }
+      .item strong { color: var(--accent); font-weight: 600; }
+      .item.warn { color: var(--danger); }
+      .people { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+      .chip {
+        font-family: "IBM Plex Mono", monospace;
+        font-size: 0.75rem;
+        border: 1px solid var(--line);
+        padding: 0.25rem 0.5rem;
+        border-radius: 0.35rem;
+      }
+      .banner {
+        margin: 0 0 1.25rem;
+        padding: 0.75rem 0.9rem;
+        border: 1px solid rgba(214, 164, 91, 0.45);
+        background: rgba(214, 164, 91, 0.1);
+        color: var(--ink);
+        font-size: 0.92rem;
+        line-height: 1.4;
+        animation: rise 0.75s ease both;
+      }
+      .banner strong { color: var(--accent); }
+      .consent {
+        display: flex;
+        gap: 0.55rem;
+        align-items: flex-start;
+        margin: 0 0 1rem;
+        color: var(--muted);
+        font-size: 0.9rem;
+        line-height: 1.4;
+        max-width: 40rem;
+        animation: rise 0.85s ease both;
+      }
+      .consent input { margin-top: 0.2rem; }
+      @keyframes rise {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: none; }
+      }
+      @keyframes fadein {
+        from { opacity: 0; transform: translateY(4px); }
+        to { opacity: 1; transform: none; }
+      }
     </style>
   </head>
   <body>
     <main>
       <h1 class="brand">Physical Meeting Copilot</h1>
       <p class="lede">
-        Capture table audio in the browser. Live chunks enter Meeting Core over WebSocket
-        (Phase 2 slice). LiveKit remains the preferred production transport.
+        Capture table audio, follow speakers and translations, and surface alerts
+        while your personal agent researches in the background.
+        v0.1 supports Mandarin + English meeting workflows.
       </p>
+      <div class="banner" role="status">
+        <strong>Simulated ASR (v0.1).</strong>
+        Mic → server works, but transcript text is fixture output (<code>[sim:…]</code>),
+        not real speech recognition. Use <code>./scripts/mac-smoke.sh</code> for the full offline demo.
+      </div>
+      <label class="consent">
+        <input type="checkbox" id="consent" />
+        <span>
+          I understand this prototype may record and analyze audio locally for development,
+          and I have permission from participants to proceed.
+        </span>
+      </label>
       <div class="controls">
-        <button id="start">Start meeting</button>
+        <button id="start" disabled>Start meeting</button>
         <button id="stop" class="secondary" disabled>Stop</button>
       </div>
-      <div class="status" id="status">Idle</div>
-      <div class="feed" id="feed"></div>
+      <div class="status" id="status">Accept consent to start</div>
+      <div class="layout">
+        <div class="feed" id="feed"></div>
+        <aside class="side">
+          <div class="panel">
+            <h2>People</h2>
+            <div class="people" id="people"></div>
+          </div>
+          <div class="panel">
+            <h2>Alerts</h2>
+            <div id="alerts"></div>
+          </div>
+          <div class="panel">
+            <h2>Findings</h2>
+            <div id="findings"></div>
+          </div>
+          <div class="panel">
+            <h2>Suggested questions</h2>
+            <div id="questions"></div>
+          </div>
+          <div class="panel">
+            <h2>Research</h2>
+            <div id="research"></div>
+          </div>
+        </aside>
+      </div>
     </main>
     <script>
       const statusEl = document.getElementById("status");
       const feedEl = document.getElementById("feed");
       const startBtn = document.getElementById("start");
       const stopBtn = document.getElementById("stop");
-      let ws, audioCtx, processor, source, stream, sessionId;
+      const consentEl = document.getElementById("consent");
+      const peopleEl = document.getElementById("people");
+      const alertsEl = document.getElementById("alerts");
+      const findingsEl = document.getElementById("findings");
+      const questionsEl = document.getElementById("questions");
+      const researchEl = document.getElementById("research");
+      let ws, audioCtx, processor, source, stream, sessionId, pollTimer;
 
       function setStatus(t) { statusEl.textContent = t; }
+
+      consentEl.addEventListener("change", () => {
+        startBtn.disabled = !consentEl.checked;
+        if (consentEl.checked) setStatus("Ready · Simulated ASR · zh-CN/en");
+        else setStatus("Accept consent to start");
+      });
 
       function downsampleTo16k(float32, inputRate) {
         const ratio = inputRate / 16000;
@@ -131,29 +249,92 @@
         return btoa(s);
       }
 
+      function renderList(el, items, mapper) {
+        if (!items || !items.length) {
+          el.innerHTML = '<div class="item" style="color:var(--muted)">None yet</div>';
+          return;
+        }
+        el.innerHTML = items.map(mapper).join("");
+      }
+
+      function updateSide(msg) {
+        if (msg.speakers) {
+          const entries = Object.entries(msg.speakers);
+          peopleEl.innerHTML = entries.length
+            ? entries.map(([id, label]) => `<span class="chip">${label} · ${id}</span>`).join("")
+            : '<span class="chip">Listening…</span>';
+        }
+        renderList(alertsEl, msg.alerts, (a) =>
+          `<div class="item warn"><strong>P${a.priority}</strong> ${a.text}</div>`);
+        renderList(findingsEl, msg.findings, (f) =>
+          `<div class="item"><strong>${f.severity}</strong> ${f.summary}</div>`);
+        renderList(questionsEl, msg.questions, (q) =>
+          `<div class="item">${q.suggested ? "<strong>Ask</strong> " : ""}${q.text}</div>`);
+        renderList(researchEl, msg.research, (r) =>
+          `<div class="item"><strong>${r.status}</strong> ${r.query}</div>`);
+      }
+
+      async function refreshContext() {
+        if (!sessionId) return;
+        const res = await fetch(`/api/sessions/${sessionId}/context`);
+        if (!res.ok) return;
+        const data = await res.json();
+        updateSide({
+          speakers: data.speakers || {},
+          alerts: data.alerts,
+          findings: data.findings,
+          questions: data.open_questions,
+          research: data.research,
+        });
+      }
+
       async function start() {
+        if (!consentEl.checked) {
+          setStatus("Consent required");
+          return;
+        }
         startBtn.disabled = true;
+        feedEl.innerHTML = "";
         const res = await fetch("/api/sessions", {
           method: "POST",
           headers: { "content-type": "application/json" },
-          body: JSON.stringify({ title: "Browser capture" }),
+          body: JSON.stringify({
+            title: "Browser capture",
+            consent: true,
+            pre_meeting: {
+              goals: ["Follow the conversation"],
+              watch_items: ["price", "capacity", "warranty", "delivery"],
+              prior_facts: [{ topic: "capacity", value: 4200, unit: "tons" }],
+            },
+          }),
         });
         const data = await res.json();
+        if (!res.ok) {
+          throw new Error(data.message || data.error || "session start failed");
+        }
         sessionId = data.session_id;
         const proto = location.protocol === "https:" ? "wss" : "ws";
         ws = new WebSocket(`${proto}://${location.host}/ws/audio/${sessionId}`);
         ws.onmessage = (ev) => {
           const msg = JSON.parse(ev.data);
-          if (msg.type === "ingest" && msg.transcript) {
-            const div = document.createElement("div");
-            div.className = "seg";
-            const tr = msg.translation
-              ? `<div style="color:var(--accent);margin-top:0.25rem">${msg.translation.translated_text}</div>`
-              : "";
-            div.innerHTML = `<div class="meta">${msg.transcript.language || ""} · ${msg.timestamp_ms}ms · rms ${Math.round(msg.rms)}</div>${msg.transcript.text}${tr}`;
-            feedEl.prepend(div);
+          if (msg.type === "ingest") {
+            updateSide(msg);
+            if (msg.transcript) {
+              const div = document.createElement("div");
+              div.className = "seg";
+              const tr = msg.translation
+                ? `<div style="color:var(--accent);margin-top:0.25rem">${msg.translation.translated_text}</div>`
+                : "";
+              const spk = msg.speaker_id || msg.transcript.speaker_id || "";
+              div.innerHTML = `<div class="meta">${spk} · ${msg.transcript.language || ""} · ${msg.timestamp_ms}ms · rms ${Math.round(msg.rms)}</div>${msg.transcript.text}${tr}`;
+              feedEl.prepend(div);
+            }
           }
-          if (msg.type === "ready") setStatus(`Live · session ${sessionId.slice(0, 8)}`);
+          if (msg.type === "ready") {
+            setStatus(`Live · session ${sessionId.slice(0, 8)}`);
+            if (msg.summary) setStatus(`Live · ${msg.summary.mode} · ${sessionId.slice(0, 8)}`);
+          }
+          if (msg.type === "stopped") setStatus("Stopped · package exported");
         };
         await new Promise((resolve, reject) => {
           ws.onopen = resolve;
@@ -173,17 +354,18 @@
             pcm_b64: b64(pcm),
             timestamp_ms: Math.round(performance.now() - t0),
             language_hint: "zh-CN",
-            speaker_id: "spk_room",
           }));
         };
         source.connect(processor);
         processor.connect(audioCtx.destination);
         stopBtn.disabled = false;
         setStatus("Capturing…");
+        pollTimer = setInterval(refreshContext, 2500);
       }
 
       async function stop() {
         stopBtn.disabled = true;
+        if (pollTimer) clearInterval(pollTimer);
         if (processor) processor.disconnect();
         if (source) source.disconnect();
         if (audioCtx) await audioCtx.close();

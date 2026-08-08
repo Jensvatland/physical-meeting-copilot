@@ -17,7 +17,15 @@ jobs:
         run: uv sync --group dev
       - name: Lint
         run: uv run ruff check .
+      - name: Format
+        run: uv run ruff format --check .
       - name: Test
         run: uv run pytest -q
       - name: Simulate meeting
         run: uv run python -m meeting_core.demo.simulate_meeting
+      - name: Eval harness
+        run: uv run python -m meeting_core.eval.harness
+      - name: MCP list
+        run: uv run python -m meeting_mcp --list
+      - name: Smoke script present
+        run: test -x scripts/mac-smoke.sh

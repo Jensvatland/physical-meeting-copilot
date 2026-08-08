@@ -1,0 +1,14 @@
+# China-first profile — FunASR/SenseVoice / Qwen-compatible endpoints preferred.
+# Real model containers can be attached later; Meeting Core stays unchanged.
+services:
+  meeting-gateway:
+    extends:
+      file: docker-compose.yml
+      service: meeting-gateway
+    environment:
+      MEETING_CORE_DB: /data/meetings.db
+      MEETING_GATEWAY_HOST: 0.0.0.0
+      MEETING_PROFILE: china
+      FUNASR_ENABLED: ${FUNASR_ENABLED:-0}
+      # QWEN_BASE_URL: ${QWEN_BASE_URL:-}
+      # QWEN_API_KEY: ${QWEN_API_KEY:-}

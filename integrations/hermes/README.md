@@ -4,17 +4,27 @@ Minimal reference bridge. Host-specific Hermes logic stays here — not in Meeti
 
 ## Setup
 
-1. Run Meeting Core / MCP façade (stdio MCP transport lands fully in Phase 7/8).
-2. Point Hermes MCP config at this server using `mcp.json`.
-3. Load `SKILL.md` as the meeting-copilot skill.
+1. Share the same SQLite DB as the gateway (default `~/.physical-meeting-copilot/meetings.db`):
+   ```bash
+   uv run meeting-gateway          # terminal 1
+   uv run python -m meeting_mcp    # terminal 2 (stdio MCP)
+   ```
+2. Point Hermes at this server using [`mcp.json`](mcp.json).
+3. Load [`SKILL.md`](SKILL.md) as the meeting-copilot skill.
 
 ## Event bridge
 
-`event_bridge.py` shows how to subscribe to Meeting Core events and forward structured payloads to Hermes without coupling core to Hermes APIs.
+[`event_bridge.py`](event_bridge.py) subscribes to Meeting Core events and can run a **non-blocking** research vertical slice (`auto_research=True`): claim → `research.*` → finding → suggested question → private speech lifecycle.
 
-## Demo vertical slice (Phase 8)
+## Demo vertical slice
 
-1. Simulated/live transcript produces a capacity claim.
+Covered by the offline smoke / simulation:
+
+```bash
+uv run python -m meeting_core.demo.simulate_meeting
+```
+
+1. Simulated transcript produces a capacity claim.
 2. Hermes starts background research (`research.started`).
-3. Finding + suggested question published while transcription continues.
-4. Private alert queued for AirPods (Phase 9).
+3. Finding + suggested question published while the session continues.
+4. Private speech lifecycle emits `private_speech.queued` / `spoken` (sim TTS; AirPods device path later).
