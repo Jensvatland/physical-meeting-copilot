@@ -58,8 +58,12 @@ TOOL_NAMES = [
 ]
 
 
+_DEFAULT_DB = "~/.physical-meeting-copilot/meetings.db"
+
+
 def default_manager() -> MeetingSessionManager:
-    path = os.path.expanduser(os.environ.get("MEETING_CORE_DB", ":memory:"))
+    # Shared default with the gateway so local demos need no export.
+    path = os.path.expanduser(os.environ.get("MEETING_CORE_DB", _DEFAULT_DB))
     return MeetingSessionManager(storage=SqliteStorageAdapter(path))
 
 

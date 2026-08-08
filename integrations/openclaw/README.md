@@ -4,10 +4,10 @@ Second reference host. Meeting Core must work unchanged.
 
 ## Setup
 
-1. Use the same DB as gateway/MCP:
+1. Use the same DB as the gateway (default `~/.physical-meeting-copilot/meetings.db`):
    ```bash
-   export MEETING_CORE_DB=~/.physical-meeting-copilot/meetings.db
-   uv run python -m meeting_mcp
+   uv run meeting-gateway          # terminal 1
+   uv run python -m meeting_mcp    # terminal 2
    ```
 2. Mirror Hermes MCP config via [`mcp.json`](mcp.json) toward an OpenClaw-compatible client.
 3. Keep host-specific prompts/tools in this folder only (`SKILL.md`).

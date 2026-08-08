@@ -4,11 +4,10 @@ Minimal reference bridge. Host-specific Hermes logic stays here — not in Meeti
 
 ## Setup
 
-1. Share the same SQLite DB as the gateway:
+1. Share the same SQLite DB as the gateway (default `~/.physical-meeting-copilot/meetings.db`):
    ```bash
-   export MEETING_CORE_DB=~/.physical-meeting-copilot/meetings.db
-   uv run meeting-gateway   # terminal 1
-   uv run python -m meeting_mcp   # terminal 2 (stdio MCP)
+   uv run meeting-gateway          # terminal 1
+   uv run python -m meeting_mcp    # terminal 2 (stdio MCP)
    ```
 2. Point Hermes at this server using [`mcp.json`](mcp.json).
 3. Load [`SKILL.md`](SKILL.md) as the meeting-copilot skill.
