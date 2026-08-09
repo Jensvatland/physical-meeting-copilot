@@ -24,8 +24,8 @@ Physical meetings still lose context, contradictions, and follow-ups in the nois
 
 | | |
 |---|---|
-| ✅ **Working today** | Meeting Core, SQLite, offline smoke, browser mic→WebSocket capture, MCP stdio, Hermes research demo slice, export/history heuristics, Docker sim stack |
-| 🧪 **Experimental** | Simulated ASR/diarization/translation/TTS; LiveKit/FunASR/Postgres stubs; unauthenticated local gateway |
+| ✅ **Working today** | Meeting Core, SQLite, offline smoke, browser mic→WebSocket capture, consent gate + sim-ASR banner, MCP stdio, Hermes research demo slice, export/history heuristics, Docker sim stack (loopback host publish) |
+| 🧪 **Experimental** | Simulated ASR/diarization/translation/TTS; LiveKit/FunASR/Postgres stubs; unauthenticated local gateway; text-only eval harness |
 | 🚧 **Planned** | Real ASR/MT adapters, LiveKit production path, iOS/iPad clients, stronger audio eval suites, auth for remote exposure |
 
 Details: [docs/STATUS.md](docs/STATUS.md).
@@ -67,7 +67,7 @@ docker compose up --build
 # overlays: docker-compose.china.yml / docker-compose.global.yml
 ```
 
-> Docker publishes the gateway without auth. Use only on trusted networks; prefer local binds for demos. See [SECURITY.md](SECURITY.md).
+> Docker publishes the gateway on host `127.0.0.1:8787` without auth. Do not widen the host bind without authentication/TLS. See [SECURITY.md](SECURITY.md).
 
 ## How can I help?
 

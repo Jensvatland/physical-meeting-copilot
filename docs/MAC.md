@@ -37,12 +37,14 @@ uv run meeting-gateway
 open http://127.0.0.1:8787
 ```
 
-Allow microphone → **Start meeting**.
+Check the consent box → allow microphone → **Start meeting**.
 
 ### What you will see today
 
 | Layer | Behavior on Mac now |
 |-------|---------------------|
+| Consent | Required checkbox; gateway rejects capture without it |
+| Honesty banner | UI states ASR/MT are still simulated |
 | Mic → server | Works (PCM over WebSocket) |
 | VAD / activity | Works (energy-based) |
 | Speaker labels | Simulated diarization (spk_1…) |

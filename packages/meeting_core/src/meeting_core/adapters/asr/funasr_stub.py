@@ -37,7 +37,12 @@ class FunASRSpeechRecognitionAdapter(SpeechRecognitionAdapter):
                 degraded=True,
                 detail="FUNASR_ENABLED not set; use SimulatedSpeechRecognitionAdapter",
             )
-        return HealthStatus(healthy=True, detail=f"model={self.model}")
+        # Enabled but not wired: advertise degraded so operators do not trust a green health check.
+        return HealthStatus(
+            healthy=False,
+            degraded=True,
+            detail=f"model={self.model}; runtime not wired (transcribe_stream raises NotImplementedError)",
+        )
 
     async def transcribe_stream(self, audio_chunk: bytes, *, language_hint: str | None = None) -> dict:
         if not self._ready:

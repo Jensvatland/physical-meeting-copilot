@@ -12,11 +12,12 @@ export MEETING_CORE_DB=~/.physical-meeting-copilot/meetings.db
 uv run meeting-gateway
 ```
 
-Open `http://127.0.0.1:8787` in **Chrome**. The page captures microphone PCM, downsamples to 16 kHz, and streams frames over WebSocket to Meeting Core. Side panels show people, alerts, findings, suggested questions, and research status.
+Open `http://127.0.0.1:8787` in **Chrome**. Confirm the consent checkbox, then start. The page captures microphone PCM, downsamples to 16 kHz, and streams frames over WebSocket to Meeting Core. Side panels show people, alerts, findings, suggested questions, and research status.
 
 ## Notes
 
 - LiveKit remains the preferred production realtime transport.
 - This WebSocket path exists so local demos work without cloud credentials.
-- Transcript text is **simulated ASR** until FunASR (or another adapter) is wired.
+- The UI shows a **Simulated ASR/MT** banner; transcript text is still simulated until FunASR (or another adapter) is wired.
+- Capture will not start without `consent_recorded=true` (checkbox → API).
 - Point MCP at the same `MEETING_CORE_DB` so Hermes/OpenClaw can inspect the live session.

@@ -20,6 +20,7 @@ class FixedChineseASR(SimulatedSpeechRecognitionAdapter):
 @pytest.mark.asyncio
 async def test_mandarin_preserved_with_english_translation() -> None:
     session = MeetingSession(storage=SqliteStorageAdapter(":memory:"))
+    session.record_consent(recorded=True)
     session.start()
     pipeline = RealtimeIngestPipeline(
         session=session,

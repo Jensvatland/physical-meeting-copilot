@@ -54,6 +54,7 @@ TOOL_NAMES = [
     "meeting.search_sessions",
     "meeting.delete_session",
     "meeting.record_consent",
+    "meeting.delete_biometrics",
     "meeting.compare_claim",
 ]
 
@@ -264,16 +265,20 @@ class MeetingMCPFacade:
             session = self._require(args.get("session_id"))
             session.record_consent(recorded=bool(args.get("recorded", True)))
             return session.state.summary()
+        if name == "meeting.delete_biometrics":
+            session = self._require(args.get("session_id"))
+            cleared = session.delete_biometrics()
+            return {"cleared": cleared, "session_id": session.state.session_id}
         if name == "meeting.update_participant":
             session = self._require(args.get("session_id"))
-            participant_id = args["participant_id"]
-            p = next(x for x in session.state.participants if x.participant_id == participant_id)
-            for key in ("display_name", "role", "company", "seat_position"):
-                if key in args:
-                    setattr(p, key, args[key])
-            if "biometric_consent" in args:
-                p.biometric_consent = bool(args["biometric_consent"])
-            session.storage.save_session(session.state)
+            p = session.update_participant(
+                args["participant_id"],
+                display_name=args.get("display_name"),
+                role=args.get("role"),
+                company=args.get("company"),
+                seat_position=args.get("seat_position"),
+                biometric_consent=args.get("biometric_consent"),
+            )
             return p.model_dump(mode="json")
         raise ValueError(f"Unknown tool: {name}")
 
@@ -606,6 +611,10 @@ def build_mcp_server(facade: MeetingMCPFacade | None = None):
         return _json(
             await facade.call_tool_async("meeting.record_consent", {"session_id": session_id, "recorded": recorded})
         )
+
+    @server.tool(name="meeting.delete_biometrics")
+    async def delete_biometrics(session_id: str | None = None) -> str:
+        return _json(await facade.call_tool_async("meeting.delete_biometrics", {"session_id": session_id}))
 
     @server.tool(name="meeting.compare_claim")
     async def compare_claim(claim_id: str, session_id: str | None = None) -> str:

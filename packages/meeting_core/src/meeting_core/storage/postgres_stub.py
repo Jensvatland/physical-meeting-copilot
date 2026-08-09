@@ -40,3 +40,6 @@ class PostgresStorageAdapter(StorageAdapter):
 
     def delete_session(self, session_id: str) -> None:
         raise NotImplementedError("Postgres adapter pending driver install; use SqliteStorageAdapter")
+
+    def list_session_ids(self) -> list[str]:
+        raise NotImplementedError("Postgres adapter pending driver install; use SqliteStorageAdapter")

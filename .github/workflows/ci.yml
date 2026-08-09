@@ -8,11 +8,15 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12"]
     steps:
       - uses: actions/checkout@v7
       - uses: astral-sh/setup-uv@v7
         with:
-          python-version: "3.12"
+          python-version: ${{ matrix.python-version }}
       - name: Sync
         run: uv sync --group dev
       - name: Lint
@@ -28,6 +32,7 @@ jobs:
       - name: MCP list
         run: uv run python -m meeting_mcp --list
       - name: Mac smoke script
+        if: matrix.python-version == '3.12'
         run: |
           chmod +x scripts/mac-smoke.sh
           ./scripts/mac-smoke.sh

@@ -12,7 +12,9 @@ Architectural detail lives in [docs/SECURITY.md](docs/SECURITY.md). Facts that m
 
 - MCP is **local stdio** with **no authentication** — treat it as a same-user trust boundary.
 - The HTTP/WebSocket gateway has **no session auth** yet — prefer `MEETING_GATEWAY_HOST=127.0.0.1` for local demos.
-- The default Docker Compose file binds the gateway to `0.0.0.0` for container networking. **Do not** expose it to the public internet without adding authentication and TLS.
+- Non-loopback binds require explicit `MEETING_ALLOW_INSECURE_BIND=1`.
+- Default Docker Compose publishes the gateway on **host** `127.0.0.1:8787` only (container still listens on `0.0.0.0` internally). **Do not** widen the host publish without adding authentication and TLS.
+- Capture/transcription requires `consent_recorded=true` (browser checkbox / API flag).
 - Never commit API keys, tokens, `.env` files, meeting recordings, or transcripts.
 
 ## Reporting a vulnerability

@@ -13,14 +13,17 @@ import os
 from pathlib import Path
 from typing import Any
 
-from meeting_core.adapters.asr.sim import SimulatedSpeechRecognitionAdapter
-from meeting_core.adapters.diarization.sim import SimulatedDiarizationAdapter
 from meeting_core.adapters.realtime.livekit_stub import LiveKitTransportAdapter
-from meeting_core.adapters.translation.sim import SimulatedTranslationAdapter
-from meeting_core.adapters.tts.sim import SimulatedTextToSpeechAdapter
+from meeting_core.adapters.select import (
+    adapter_selection_info,
+    select_asr,
+    select_diarization,
+    select_translation,
+    select_tts,
+)
 from meeting_core.realtime.pipeline import RealtimeIngestPipeline
 from meeting_core.reliability.health import aggregate_health
-from meeting_core.session import MeetingSessionManager
+from meeting_core.session import ConsentRequiredError, MeetingSessionManager
 from meeting_core.storage.sqlite import SqliteStorageAdapter
 from starlette.applications import Starlette
 from starlette.requests import Request
@@ -30,10 +33,26 @@ from starlette.staticfiles import StaticFiles
 from starlette.websockets import WebSocket
 
 WEB_DIR = Path(__file__).resolve().parents[4] / "clients" / "web" / "public"
+LOOPBACK_HOSTS = {"127.0.0.1", "localhost", "::1"}
 
 
 def _db_path() -> str:
     return os.path.expanduser(os.environ.get("MEETING_CORE_DB", ":memory:"))
+
+
+def _db_public() -> dict[str, Any]:
+    path = _db_path()
+    if path == ":memory:":
+        return {"configured": True, "backend": "memory"}
+    return {"configured": True, "backend": "sqlite", "name": Path(path).name}
+
+
+def _truthy(name: str) -> bool:
+    return os.environ.get(name, "").strip().lower() in {"1", "true", "yes"}
+
+
+def _debug_enabled() -> bool:
+    return _truthy("MEETING_GATEWAY_DEBUG")
 
 
 class GatewayState:
@@ -41,10 +60,10 @@ class GatewayState:
         self.manager = MeetingSessionManager(storage=SqliteStorageAdapter(_db_path()))
         self.pipelines: dict[str, RealtimeIngestPipeline] = {}
         self.adapters = {
-            "asr": SimulatedSpeechRecognitionAdapter(),
-            "translation": SimulatedTranslationAdapter(),
-            "diarization": SimulatedDiarizationAdapter(),
-            "tts": SimulatedTextToSpeechAdapter(),
+            "asr": select_asr(),
+            "translation": select_translation(),
+            "diarization": select_diarization(),
+            "tts": select_tts(),
             "livekit": LiveKitTransportAdapter(),
             "storage": self.manager.storage,
         }
@@ -53,13 +72,25 @@ class GatewayState:
         self,
         title: str | None = None,
         pre_meeting: dict[str, Any] | None = None,
+        *,
+        consent_recorded: bool = False,
     ) -> tuple[str, RealtimeIngestPipeline]:
+        if not consent_recorded:
+            raise ConsentRequiredError(
+                "consent_recorded=true is required to start a capture session. "
+                "Obtain required consent before recording."
+            )
         session = self.manager.create(title=title or "Live meeting")
         if pre_meeting:
             session.set_pre_meeting_context(pre_meeting)
         session.record_consent(recorded=True)
         session.start()
-        pipeline = RealtimeIngestPipeline(session=session)
+        pipeline = RealtimeIngestPipeline(
+            session=session,
+            asr=self.adapters["asr"],
+            translator=self.adapters["translation"],
+            diarizer=self.adapters["diarization"],
+        )
         self.pipelines[session.state.session_id] = pipeline
         return session.state.session_id, pipeline
 
@@ -72,8 +103,11 @@ async def health(_: Request) -> JSONResponse:
         {
             "ok": True,
             "service": "meeting-gateway",
-            "db": _db_path(),
+            "db": _db_public(),
+            "selection": adapter_selection_info(),
             "adapters": aggregate_health(STATE.adapters),
+            "auth": "none",
+            "consent_required": True,
         }
     )
 
@@ -82,8 +116,27 @@ async def start_session(request: Request) -> JSONResponse:
     body: dict[str, Any] = {}
     if request.headers.get("content-type", "").startswith("application/json"):
         body = await request.json()
-    sid, _ = STATE.ensure_session(title=body.get("title"), pre_meeting=body.get("pre_meeting"))
-    return JSONResponse({"session_id": sid, "ws_url": f"/ws/audio/{sid}"})
+    consent = bool(body.get("consent_recorded"))
+    try:
+        sid, _ = STATE.ensure_session(
+            title=body.get("title"),
+            pre_meeting=body.get("pre_meeting"),
+            consent_recorded=consent,
+        )
+    except ConsentRequiredError as exc:
+        return JSONResponse({"error": str(exc), "code": "consent_required"}, status_code=400)
+    return JSONResponse({"session_id": sid, "ws_url": f"/ws/audio/{sid}", "consent_recorded": True})
+
+
+async def record_consent(request: Request) -> JSONResponse:
+    sid = request.path_params["session_id"]
+    session = STATE.manager.get(sid)
+    if not session:
+        return JSONResponse({"error": "not found"}, status_code=404)
+    body = await request.json() if request.headers.get("content-type", "").startswith("application/json") else {}
+    recorded = bool(body.get("recorded", True))
+    session.record_consent(recorded=recorded)
+    return JSONResponse(session.state.summary())
 
 
 async def list_sessions(_: Request) -> JSONResponse:
@@ -135,6 +188,7 @@ async def assign_speaker(request: Request) -> JSONResponse:
         role=body.get("role"),
         company=body.get("company"),
         seat_position=body.get("seat_position"),
+        biometric_consent=bool(body.get("biometric_consent", False)),
     )
     return JSONResponse(p.model_dump(mode="json"))
 
@@ -147,20 +201,41 @@ async def audio_ws(websocket: WebSocket) -> None:
         if not session:
             await websocket.close(code=4404)
             return
-        pipeline = RealtimeIngestPipeline(session=session)
+        pipeline = RealtimeIngestPipeline(
+            session=session,
+            asr=STATE.adapters["asr"],
+            translator=STATE.adapters["translation"],
+            diarizer=STATE.adapters["diarization"],
+        )
         STATE.pipelines[sid] = pipeline
     await websocket.accept()
-    await websocket.send_json({"type": "ready", "session_id": sid, "summary": pipeline.session.state.summary()})
+    await websocket.send_json(
+        {
+            "type": "ready",
+            "session_id": sid,
+            "summary": pipeline.session.state.summary(),
+            "asr": STATE.adapters["asr"].capabilities().name,
+            "simulated_asr": STATE.adapters["asr"].capabilities().name.startswith("asr:sim"),
+        }
+    )
     try:
         while True:
             message = await websocket.receive()
             if message["type"] == "websocket.disconnect":
                 break
             if "text" in message and message["text"] is not None:
-                data = json.loads(message["text"])
+                try:
+                    data = json.loads(message["text"])
+                except json.JSONDecodeError:
+                    await websocket.send_json({"type": "error", "error": "invalid JSON", "code": "bad_json"})
+                    continue
                 await _handle_json_audio(pipeline, websocket, data)
             elif "bytes" in message and message["bytes"] is not None:
-                result = await pipeline.on_audio(message["bytes"], timestamp_ms=0)
+                try:
+                    result = await pipeline.on_audio(message["bytes"], timestamp_ms=0)
+                except ConsentRequiredError as exc:
+                    await websocket.send_json({"type": "error", "error": str(exc), "code": "consent_required"})
+                    continue
                 await websocket.send_json(_public_result(result, pipeline))
     finally:
         pass
@@ -168,13 +243,21 @@ async def audio_ws(websocket: WebSocket) -> None:
 
 async def _handle_json_audio(pipeline: RealtimeIngestPipeline, websocket: WebSocket, data: dict[str, Any]) -> None:
     if data.get("type") == "audio":
-        pcm = base64.b64decode(data["pcm_b64"])
+        try:
+            pcm = base64.b64decode(data["pcm_b64"])
+        except (KeyError, ValueError) as exc:
+            await websocket.send_json({"type": "error", "error": f"invalid audio payload: {exc}", "code": "bad_audio"})
+            return
         ts = int(data.get("timestamp_ms", 0))
         if data.get("speaker_id"):
             pipeline.speaker_id = str(data["speaker_id"])
         if data.get("language_hint"):
             pipeline.language_hint = str(data["language_hint"])
-        result = await pipeline.on_audio(pcm, timestamp_ms=ts)
+        try:
+            result = await pipeline.on_audio(pcm, timestamp_ms=ts)
+        except ConsentRequiredError as exc:
+            await websocket.send_json({"type": "error", "error": str(exc), "code": "consent_required"})
+            return
         await websocket.send_json(_public_result(result, pipeline))
     elif data.get("type") == "stop":
         pipeline.session.stop()
@@ -226,6 +309,7 @@ routes = [
     Route("/api/sessions", list_sessions, methods=["GET"]),
     Route("/api/sessions/{session_id}", session_summary),
     Route("/api/sessions/{session_id}/context", session_state),
+    Route("/api/sessions/{session_id}/consent", record_consent, methods=["POST"]),
     Route("/api/sessions/{session_id}/stop", stop_session, methods=["POST"]),
     Route("/api/sessions/{session_id}/export", export_session),
     Route("/api/sessions/{session_id}/speakers", assign_speaker, methods=["POST"]),
@@ -235,7 +319,7 @@ routes = [
 if WEB_DIR.exists():
     routes.append(Mount("/static", StaticFiles(directory=str(WEB_DIR)), name="static"))
 
-app = Starlette(debug=True, routes=routes)
+app = Starlette(debug=_debug_enabled(), routes=routes)
 
 
 def main() -> None:
@@ -244,18 +328,27 @@ def main() -> None:
     host = os.environ.get("MEETING_GATEWAY_HOST", "127.0.0.1")
     port = int(os.environ.get("MEETING_GATEWAY_PORT", "8787"))
     db = _db_path()
+    selection = adapter_selection_info()
     print("Physical Meeting Copilot — meeting-gateway")
     print(f"  UI:      http://{host}:{port}")
     print(f"  DB:      {db}")
     print("  Capture: browser mic → WebSocket PCM (LiveKit optional)")
-    print("  ASR/MT:  simulated adapters (real speech text requires FunASR/Qwen later)")
-    print("  Tip:     use Chrome; allow microphone; run scripts/mac-smoke.sh first")
-    if host not in {"127.0.0.1", "localhost", "::1"}:
+    print(f"  Profile: {selection['profile']} · ASR={selection['asr']}")
+    if selection["asr"].startswith("asr:sim"):
+        print("  ASR/MT:  simulated adapters (real speech text requires FunASR/Qwen later)")
+    else:
+        print("  ASR/MT:  non-sim selection — verify adapter health before relying on transcripts")
+    print("  Tip:     use Chrome; allow microphone; confirm consent; run scripts/mac-smoke.sh first")
+    if host not in LOOPBACK_HOSTS:
         print(
             "  WARNING: gateway has no authentication yet; "
             f"binding to {host!r} exposes an open meeting API on your network. "
             "Prefer MEETING_GATEWAY_HOST=127.0.0.1 for local demos."
         )
+        if not _truthy("MEETING_ALLOW_INSECURE_BIND"):
+            raise SystemExit(
+                "Refusing non-loopback bind without MEETING_ALLOW_INSECURE_BIND=1 (gateway has no authentication)."
+            )
     uvicorn.run("meeting_gateway.app:app", host=host, port=port, reload=False)
 
 
