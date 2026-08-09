@@ -19,6 +19,7 @@
         --accent: #d6a45b;
         --line: rgba(231, 242, 236, 0.12);
         --danger: #e08a6a;
+        --notice: #2a3f36;
       }
       * { box-sizing: border-box; }
       body {
@@ -45,17 +46,51 @@
       }
       .lede {
         color: var(--muted);
-        margin: 0 0 1.75rem;
+        margin: 0 0 1rem;
         max-width: 40rem;
         line-height: 1.45;
         animation: rise 0.8s ease both;
       }
+      .banner {
+        border: 1px solid var(--line);
+        background: var(--notice);
+        padding: 0.85rem 1rem;
+        border-radius: 0.45rem;
+        margin: 0 0 1.25rem;
+        font-size: 0.92rem;
+        line-height: 1.4;
+        color: var(--ink);
+        animation: rise 0.85s ease both;
+      }
+      .banner strong { color: var(--accent); font-weight: 600; }
+      .consent {
+        display: grid;
+        gap: 0.55rem;
+        margin: 0 0 1.25rem;
+        max-width: 40rem;
+        animation: rise 0.9s ease both;
+      }
+      .consent label {
+        display: flex;
+        gap: 0.65rem;
+        align-items: flex-start;
+        line-height: 1.4;
+        color: var(--ink);
+        font-size: 0.95rem;
+      }
+      .consent input { margin-top: 0.25rem; }
+      .consent .hint {
+        color: var(--muted);
+        font-size: 0.85rem;
+        line-height: 1.4;
+      }
+      .consent a { color: var(--accent); }
       .controls {
         display: flex;
         flex-wrap: wrap;
         gap: 0.75rem;
         margin-bottom: 1.25rem;
-        animation: rise 0.9s ease both;
+        animation: rise 0.95s ease both;
       }
       button {
         font: inherit;
@@ -100,6 +135,7 @@
         animation: fadein 0.35s ease both;
       }
       .seg .meta { color: var(--muted); font-size: 0.75rem; margin-bottom: 0.2rem; }
+      .seg .tr { color: var(--accent); margin-top: 0.25rem; }
       .panel h2 {
         margin: 0 0 0.6rem;
         font-size: 0.95rem;
@@ -142,11 +178,30 @@
         Capture table audio, follow speakers and translations, and surface alerts
         while your personal agent researches in the background.
       </p>
+      <div class="banner" role="status">
+        <strong>Simulated ASR/MT.</strong>
+        Mic → server capture is real, but transcript text is still produced by simulated
+        adapters (prefixed like <code>[sim:…]</code>). This is not live Mandarin/English recognition yet.
+      </div>
+      <div class="consent">
+        <label>
+          <input type="checkbox" id="consent" />
+          <span>
+            I confirm I have obtained any required consent to record and process this
+            conversation, and I accept operator responsibility under applicable law.
+          </span>
+        </label>
+        <p class="hint">
+          Privacy notes for operators:
+          <a href="https://github.com/Jensvatland/physical-meeting-copilot/blob/main/docs/PRIVACY.md" target="_blank" rel="noopener noreferrer">docs/PRIVACY.md</a>.
+          The gateway will refuse to start capture without this confirmation.
+        </p>
+      </div>
       <div class="controls">
-        <button id="start">Start meeting</button>
+        <button id="start" disabled>Start meeting</button>
         <button id="stop" class="secondary" disabled>Stop</button>
       </div>
-      <div class="status" id="status">Idle</div>
+      <div class="status" id="status">Idle — confirm consent to begin</div>
       <div class="layout">
         <div class="feed" id="feed"></div>
         <aside class="side">
@@ -178,6 +233,7 @@
       const feedEl = document.getElementById("feed");
       const startBtn = document.getElementById("start");
       const stopBtn = document.getElementById("stop");
+      const consentEl = document.getElementById("consent");
       const peopleEl = document.getElementById("people");
       const alertsEl = document.getElementById("alerts");
       const findingsEl = document.getElementById("findings");
@@ -186,6 +242,18 @@
       let ws, audioCtx, processor, source, stream, sessionId, pollTimer;
 
       function setStatus(t) { statusEl.textContent = t; }
+      function esc(s) {
+        return String(s ?? "")
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;")
+          .replaceAll('"', "&quot;");
+      }
+
+      function syncStartEnabled() {
+        startBtn.disabled = !consentEl.checked || Boolean(ws && ws.readyState === 1);
+      }
+      consentEl.addEventListener("change", syncStartEnabled);
 
       function downsampleTo16k(float32, inputRate) {
         const ratio = inputRate / 16000;
@@ -218,17 +286,17 @@
         if (msg.speakers) {
           const entries = Object.entries(msg.speakers);
           peopleEl.innerHTML = entries.length
-            ? entries.map(([id, label]) => `<span class="chip">${label} · ${id}</span>`).join("")
+            ? entries.map(([id, label]) => `<span class="chip">${esc(label)} · ${esc(id)}</span>`).join("")
             : '<span class="chip">Listening…</span>';
         }
         renderList(alertsEl, msg.alerts, (a) =>
-          `<div class="item warn"><strong>P${a.priority}</strong> ${a.text}</div>`);
+          `<div class="item warn"><strong>P${esc(a.priority)}</strong> ${esc(a.text)}</div>`);
         renderList(findingsEl, msg.findings, (f) =>
-          `<div class="item"><strong>${f.severity}</strong> ${f.summary}</div>`);
+          `<div class="item"><strong>${esc(f.severity)}</strong> ${esc(f.summary)}</div>`);
         renderList(questionsEl, msg.questions, (q) =>
-          `<div class="item">${q.suggested ? "<strong>Ask</strong> " : ""}${q.text}</div>`);
+          `<div class="item">${q.suggested ? "<strong>Ask</strong> " : ""}${esc(q.text)}</div>`);
         renderList(researchEl, msg.research, (r) =>
-          `<div class="item"><strong>${r.status}</strong> ${r.query}</div>`);
+          `<div class="item"><strong>${esc(r.status)}</strong> ${esc(r.query)}</div>`);
       }
 
       async function refreshContext() {
@@ -246,6 +314,10 @@
       }
 
       async function start() {
+        if (!consentEl.checked) {
+          setStatus("Confirm consent before starting");
+          return;
+        }
         startBtn.disabled = true;
         feedEl.innerHTML = "";
         const res = await fetch("/api/sessions", {
@@ -253,6 +325,7 @@
           headers: { "content-type": "application/json" },
           body: JSON.stringify({
             title: "Browser capture",
+            consent_recorded: true,
             pre_meeting: {
               goals: ["Follow the conversation"],
               watch_items: ["price", "capacity", "warranty", "delivery"],
@@ -261,27 +334,43 @@
           }),
         });
         const data = await res.json();
+        if (!res.ok) {
+          throw new Error(data.error || "Failed to start session");
+        }
         sessionId = data.session_id;
         const proto = location.protocol === "https:" ? "wss" : "ws";
         ws = new WebSocket(`${proto}://${location.host}/ws/audio/${sessionId}`);
         ws.onmessage = (ev) => {
           const msg = JSON.parse(ev.data);
+          if (msg.type === "error") {
+            setStatus(msg.error || "Gateway error");
+            return;
+          }
           if (msg.type === "ingest") {
             updateSide(msg);
             if (msg.transcript) {
               const div = document.createElement("div");
               div.className = "seg";
-              const tr = msg.translation
-                ? `<div style="color:var(--accent);margin-top:0.25rem">${msg.translation.translated_text}</div>`
-                : "";
+              const meta = document.createElement("div");
+              meta.className = "meta";
               const spk = msg.speaker_id || msg.transcript.speaker_id || "";
-              div.innerHTML = `<div class="meta">${spk} · ${msg.transcript.language || ""} · ${msg.timestamp_ms}ms · rms ${Math.round(msg.rms)}</div>${msg.transcript.text}${tr}`;
+              meta.textContent = `${spk} · ${msg.transcript.language || ""} · ${msg.timestamp_ms}ms · rms ${Math.round(msg.rms)}`;
+              const text = document.createElement("div");
+              text.textContent = msg.transcript.text || "";
+              div.append(meta, text);
+              if (msg.translation) {
+                const tr = document.createElement("div");
+                tr.className = "tr";
+                tr.textContent = msg.translation.translated_text || "";
+                div.append(tr);
+              }
               feedEl.prepend(div);
             }
           }
           if (msg.type === "ready") {
-            setStatus(`Live · session ${sessionId.slice(0, 8)}`);
-            if (msg.summary) setStatus(`Live · ${msg.summary.mode} · ${sessionId.slice(0, 8)}`);
+            const sim = msg.simulated_asr ? " · sim ASR" : "";
+            setStatus(`Live · session ${sessionId.slice(0, 8)}${sim}`);
+            if (msg.summary) setStatus(`Live · ${msg.summary.mode} · ${sessionId.slice(0, 8)}${sim}`);
           }
           if (msg.type === "stopped") setStatus("Stopped · package exported");
         };
@@ -308,7 +397,7 @@
         source.connect(processor);
         processor.connect(audioCtx.destination);
         stopBtn.disabled = false;
-        setStatus("Capturing…");
+        setStatus("Capturing… (simulated ASR)");
         pollTimer = setInterval(refreshContext, 2500);
       }
 
@@ -323,14 +412,16 @@
           ws.send(JSON.stringify({ type: "stop" }));
           ws.close();
         }
-        startBtn.disabled = false;
+        ws = null;
+        syncStartEnabled();
         setStatus("Stopped");
       }
 
       startBtn.onclick = () => start().catch((e) => {
         console.error(e);
-        setStatus(String(e));
-        startBtn.disabled = false;
+        setStatus(String(e.message || e));
+        ws = null;
+        syncStartEnabled();
       });
       stopBtn.onclick = () => stop();
     </script>

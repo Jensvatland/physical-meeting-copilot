@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from meeting_core.adapters.base import TextToSpeechAdapter
+from meeting_core.adapters.base import StorageAdapter, TextToSpeechAdapter
 from meeting_core.adapters.tts.sim import SimulatedTextToSpeechAdapter
 from meeting_core.bus.event_bus import EventBus
 from meeting_core.domain.models import (
@@ -38,12 +38,16 @@ from meeting_core.intelligence.extract import extract_primitives
 from meeting_core.storage.sqlite import SqliteStorageAdapter
 
 
+class ConsentRequiredError(PermissionError):
+    """Raised when capture/transcription is attempted without recording consent."""
+
+
 class MeetingSession:
     def __init__(
         self,
         *,
         bus: EventBus | None = None,
-        storage: SqliteStorageAdapter | None = None,
+        storage: StorageAdapter | None = None,
         config: SessionConfig | None = None,
         title: str | None = None,
         session_id: str | None = None,
@@ -59,6 +63,10 @@ class MeetingSession:
         )
         self.storage.save_session(self.state)
 
+    def emit(self, event_type: str, *, source: str = "core", **kwargs: Any) -> MeetingEvent:
+        """Public event emission for pipeline collaborators and tools."""
+        return self._emit(event_type, source=source, **kwargs)
+
     def _emit(self, event_type: str, *, source: str = "core", **kwargs: Any) -> MeetingEvent:
         event = MeetingEvent(
             session_id=self.state.session_id,
@@ -70,6 +78,13 @@ class MeetingSession:
         self._audit(event_type, source=source, payload=kwargs.get("payload") or {})
         self.storage.save_session(self.state)
         return event
+
+    def require_recording_consent(self) -> None:
+        if not self.state.config.consent_recorded:
+            raise ConsentRequiredError(
+                "Recording consent required before capture or transcription. "
+                "Call record_consent(recorded=True) after obtaining operator/participant consent."
+            )
 
     def _audit(self, action: str, *, source: str, payload: dict[str, Any] | None = None) -> None:
         self.state.audit_log.append(
@@ -118,6 +133,45 @@ class MeetingSession:
     def record_consent(self, *, recorded: bool = True) -> None:
         self.state.config.consent_recorded = recorded
         self._emit("meeting.consent_recorded", payload={"consent_recorded": recorded})
+
+    def update_participant(
+        self,
+        participant_id: str,
+        *,
+        display_name: str | None = None,
+        role: str | None = None,
+        company: str | None = None,
+        seat_position: str | None = None,
+        biometric_consent: bool | None = None,
+    ) -> Participant:
+        participant = next((p for p in self.state.participants if p.participant_id == participant_id), None)
+        if participant is None:
+            raise ValueError(f"Unknown participant_id: {participant_id}")
+        if display_name is not None:
+            participant.display_name = display_name
+            if participant.speaker_id:
+                self.state.speakers[participant.speaker_id] = display_name
+        if role is not None:
+            participant.role = role
+        if company is not None:
+            participant.company = company
+        if seat_position is not None:
+            participant.seat_position = seat_position
+        if biometric_consent is not None:
+            participant.biometric_consent = biometric_consent
+        self._emit(
+            "speaker.identity",
+            speaker_id=participant.speaker_id,
+            participant_id=participant.participant_id,
+            payload={
+                "display_name": participant.display_name,
+                "role": participant.role,
+                "company": participant.company,
+                "biometric_consent": participant.biometric_consent,
+                "updated": True,
+            },
+        )
+        return participant
 
     def ensure_speaker(self, speaker_id: str) -> str:
         if speaker_id not in self.state.speakers:
@@ -189,6 +243,7 @@ class MeetingSession:
         provenance: dict[str, Any] | None = None,
         extract: bool = True,
     ) -> TranscriptSegment:
+        self.require_recording_consent()
         if speaker_id:
             self.ensure_speaker(speaker_id)
             participant = next((p for p in self.state.participants if p.speaker_id == speaker_id), None)
@@ -600,7 +655,7 @@ class MeetingSession:
 
 
 class MeetingSessionManager:
-    def __init__(self, storage: SqliteStorageAdapter | None = None) -> None:
+    def __init__(self, storage: StorageAdapter | None = None) -> None:
         self.storage = storage or SqliteStorageAdapter()
         self._sessions: dict[str, MeetingSession] = {}
 

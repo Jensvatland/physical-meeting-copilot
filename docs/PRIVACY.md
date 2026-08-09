@@ -17,9 +17,10 @@ This document describes product principles and technical defaults. It is **not**
 
 ## Consent
 
-- Session start must surface recording/analysis status to the operator.
+- Browser UI requires an explicit consent checkbox before capture can start; the gateway rejects session create without `consent_recorded=true`.
+- Meeting Core blocks transcript/audio ingest until `record_consent(recorded=True)`.
 - Mapping a speaker to a named person is operator-driven.
-- Voice biometric enrollment is **optional**, **separately consented**, **separately stored**, **exportable**, and **deletable**. Silent enrollment is a defect.
+- Voice biometric enrollment is **optional**, **separately consented**, **separately stored**, **exportable**, and **deletable** (`meeting.delete_biometrics`). Silent enrollment is a defect.
 - Do not commit real meeting recordings, transcripts, or personal data to the repository or shared fixtures.
 
 ## Biometrics

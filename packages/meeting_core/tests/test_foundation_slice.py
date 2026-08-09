@@ -23,6 +23,7 @@ def test_pre_meeting_contradiction_and_export() -> None:
             "goals": ["Validate capacity"],
         }
     )
+    session.record_consent(recorded=True)
     session.start()
     session.add_transcript("额定容量是五千吨", speaker_id="spk_1", language="zh-CN")
     claim = session.create_claim("Rated capacity is 5000 tons", speaker_id="spk_1")
@@ -51,10 +52,12 @@ def test_research_and_private_speech_lifecycle() -> None:
 def test_session_history_search_and_delete() -> None:
     mgr = MeetingSessionManager(storage=SqliteStorageAdapter(":memory:"))
     a = mgr.create(title="Dinner Beijing")
+    a.record_consent(recorded=True)
     a.start()
     a.add_transcript("价格是一百万元", speaker_id="spk_1", language="zh-CN")
     a.stop()
     b = mgr.create(title="Other")
+    b.record_consent(recorded=True)
     b.start()
     b.add_transcript("hello", speaker_id="spk_1", language="en")
     hits = mgr.search_sessions("一百万元")

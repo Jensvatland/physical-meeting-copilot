@@ -1,14 +1,19 @@
 # Default self-host stack (SQLite + gateway). See also docker-compose.china.yml / docker-compose.global.yml.
+#
+# Host publish defaults to loopback only. The container still listens on 0.0.0.0 internally
+# (required for Docker networking) with MEETING_ALLOW_INSECURE_BIND=1. Do not change the
+# host bind to 0.0.0.0 without adding authentication/TLS.
 services:
   meeting-gateway:
     build: .
     image: physical-meeting-copilot:local
     ports:
-      - "8787:8787"
+      - "127.0.0.1:8787:8787"
     environment:
       MEETING_CORE_DB: /data/meetings.db
       MEETING_GATEWAY_HOST: 0.0.0.0
       MEETING_GATEWAY_PORT: "8787"
+      MEETING_ALLOW_INSECURE_BIND: "1"
     volumes:
       - meeting-data:/data
     healthcheck:

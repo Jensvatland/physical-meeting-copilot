@@ -35,6 +35,7 @@ def test_simulated_multi_speaker_meeting_maintains_state() -> None:
 def test_events_match_protocol_envelope() -> None:
     storage = SqliteStorageAdapter(":memory:")
     session = MeetingSession(storage=storage)
+    session.record_consent(recorded=True)
     session.start()
     session.add_transcript("你好", speaker_id="spk_1", language="zh-CN")
     session.stop()
@@ -69,6 +70,7 @@ def test_default_mode_is_copilot() -> None:
 
 def test_search_transcript() -> None:
     session = MeetingSession(storage=SqliteStorageAdapter(":memory:"))
+    session.record_consent(recorded=True)
     session.start()
     session.add_transcript("Warranty is 24 months", speaker_id="spk_1", language="en")
     session.add_transcript("交付日期九月", speaker_id="spk_2", language="zh-CN")
@@ -80,6 +82,7 @@ def test_crash_safe_reload_from_sqlite(tmp_path: Path) -> None:
     db = tmp_path / "meetings.db"
     storage = SqliteStorageAdapter(db)
     session = MeetingSession(storage=storage, title="persist")
+    session.record_consent(recorded=True)
     session.start()
     session.add_transcript("hello", speaker_id="spk_1", language="en")
     sid = session.state.session_id

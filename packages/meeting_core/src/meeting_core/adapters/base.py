@@ -106,6 +106,9 @@ class StorageAdapter(Adapter):
     @abstractmethod
     def delete_session(self, session_id: str) -> None: ...
 
+    @abstractmethod
+    def list_session_ids(self) -> list[str]: ...
+
 
 class AgentBridgeAdapter(Adapter):
     """Push structured events toward an external host without embedding host logic."""

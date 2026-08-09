@@ -36,6 +36,7 @@ class RealtimeIngestPipeline:
     metrics: PipelineMetrics = field(default_factory=PipelineMetrics)
 
     async def on_audio(self, pcm: bytes, *, timestamp_ms: int) -> dict[str, Any]:
+        self.session.require_recording_consent()
         self.metrics.chunks += 1
         vad = self.vad.process(pcm, timestamp_ms=timestamp_ms)
         event = self._emit_activity(vad)
@@ -44,7 +45,7 @@ class RealtimeIngestPipeline:
         if diar.get("active"):
             self.session.ensure_speaker(speaker_id)
             if self.metrics.last_speaker_id and self.metrics.last_speaker_id != speaker_id:
-                self.session._emit(  # noqa: SLF001
+                self.session.emit(
                     "speaker.turn",
                     speaker_id=speaker_id,
                     source=self.diarizer.capabilities().name,
@@ -98,7 +99,7 @@ class RealtimeIngestPipeline:
         return result
 
     def _emit_activity(self, vad: VadResult) -> MeetingEvent:
-        return self.session._emit(  # noqa: SLF001 — pipeline is a core collaborator
+        return self.session.emit(
             "audio.activity",
             source="vad:energy",
             confidence=min(1.0, vad.rms / (self.vad.threshold * 4) if self.vad.threshold else 0.0),

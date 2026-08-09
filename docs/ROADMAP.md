@@ -12,17 +12,17 @@ For a short “what works today” table, see [STATUS.md](STATUS.md).
 | 1 | Meeting Core | **done** |
 | 2 | Live audio (WebSocket vertical slice) | **done** (PCM ingest + VAD + sim diarization/ASR; LiveKit SDK optional stub) |
 | 3 | Live transcription | **partial** (sim ASR + FunASR stub; Mandarin retained) |
-| 4 | Diarization | **done** (sim adapter + speaker.turn; production models TBD) |
+| 4 | Diarization | **partial** (sim adapter + speaker.turn; production models TBD) |
 | 5 | Translation | **partial** (glossary sim; Qwen adapter TBD) |
-| 6 | Browser UI | **done** (transcript, people, alerts, findings, questions, research) |
+| 6 | Browser UI | **partial** (usable prototype + sim banner + consent; Ask Agent / polish TBD) |
 | 7 | Meeting MCP | **done** (resources/tools + stdio MCP SDK transport) |
 | 8 | Hermes | **done** (event bridge + non-blocking research vertical slice) |
-| 9 | Private speech | **done** (sim TTS + queued/spoken events; AirPods path TBD) |
-| 10 | OpenClaw | **done** (event bridge + mcp.json; same core unchanged) |
-| 11 | China profile | **partial** (`docker-compose.china.yml` + FunASR stub) |
-| 12 | Evaluation suite | **done** (one-command harness; expand scenarios ongoing) |
-| 13 | Reliability / fallbacks | **partial** (health aggregate, crash-safe SQLite; full matrix TBD) |
-| 14 | Security / privacy baseline | **partial** (consent, audit log, biometric clear, deletion) |
+| 9 | Private speech | **partial** (sim TTS + queued/spoken events; AirPods path TBD) |
+| 10 | OpenClaw | **partial** (thin event bridge + mcp.json; no Hermes research parity) |
+| 11 | China profile | **partial** (`docker-compose.china.yml` + FunASR stub/env selection) |
+| 12 | Evaluation suite | **partial** (one-command text-injection harness; audio/noise suites TBD) |
+| 13 | Reliability / fallbacks | **partial** (health aggregate, crash-safe SQLite, bus isolation; full matrix TBD) |
+| 14 | Security / privacy baseline | **partial** (consent gate, audit log, biometric clear, loopback Docker publish; auth/encryption TBD) |
 | 15 | Pre-meeting context | **done** |
 | 16 | Intelligence primitives | **done** (heuristic numbers/dates/prices/risks) |
 | 17 | Background research lifecycle | **done** |
@@ -30,7 +30,7 @@ For a short “what works today” table, see [STATUS.md](STATUS.md).
 | 19 | Post-meeting package | **done** |
 | 20 | Session history API | **done** (list/search/delete via manager + MCP) |
 | 21 | Storage abstraction | **partial** (SQLite + memory; Postgres stub) |
-| 22 | Self-hosting | **done** (Docker Compose + health + env templates) |
+| 22 | Self-hosting | **partial** (Docker Compose + health + env templates; no gateway auth) |
 | 23–29 | Profiles / adapters / hardware | planned / stubs |
 | 30–45 | iOS + production | planned |
 
@@ -112,7 +112,7 @@ FunASR/SenseVoice + 3D-Speaker + Qwen-compatible + local/China TTS; `docker-comp
 
 2/4/6 speakers, overlap, Mandarin/English/code-switching, technical terms, numbers, dates, prices, negation, restaurant/factory noise, echo.
 
-**Accept:** One-command benchmark report.
+**Accept:** One-command benchmark report. *(Current harness is text-injection into MeetingSession; audio/noise/overlap suites remain TBD.)*
 
 ### 13 — Reliability / fallbacks
 
@@ -124,7 +124,7 @@ Health, retry, reconnect, degraded modes, provider fallback, crash-safe sessions
 
 Encryption, secrets, retention/deletion, consent state, auditability, local-first defaults.
 
-**Accept:** Threat model + automated checks.
+**Accept:** Threat model + automated checks. *(Consent gate + loopback Docker publish land; gateway/MCP auth and at-rest encryption remain TBD.)*
 
 ### 15 — Pre-meeting context contract
 

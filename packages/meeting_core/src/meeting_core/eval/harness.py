@@ -1,4 +1,8 @@
-"""Lightweight evaluation harness for multi-speaker / Mandarin scenarios."""
+"""Lightweight text-injection evaluation harness for multi-speaker / Mandarin scenarios.
+
+This is intentionally not an audio ASR/noise suite yet: scenarios inject transcript
+text into MeetingSession. Expand toward audio replay separately.
+"""
 
 from __future__ import annotations
 
@@ -93,6 +97,7 @@ def run_scenario(scenario: Scenario) -> dict[str, Any]:
             "goals": ["Validate supplier claims"],
         }
     )
+    session.record_consent(recorded=True)
     session.start()
     for turn in scenario.turns:
         seg = session.add_transcript(turn.text, speaker_id=turn.speaker_id, language=turn.language)

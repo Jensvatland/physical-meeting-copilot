@@ -84,7 +84,7 @@ Never overwrite original statements; retain provenance.
 
 ## MCP tools
 
-`meeting.start_session`, `meeting.stop_session`, `meeting.get_live_state`, `meeting.get_recent_context`, `meeting.search_transcript`, `meeting.list_speakers`, `meeting.assign_speaker`, `meeting.update_participant`, `meeting.create_claim`, `meeting.update_claim`, `meeting.compare_claim`, `meeting.record_commitment`, `meeting.record_decision`, `meeting.record_question`, `meeting.publish_finding`, `meeting.push_private_alert`, `meeting.speak_private`, `meeting.set_mode`, `meeting.set_language`, `meeting.set_alert_threshold`, `meeting.set_pre_meeting_context`, `meeting.start_research`, `meeting.complete_research`, `meeting.export_package`, `meeting.list_sessions`, `meeting.search_sessions`, `meeting.delete_session`, `meeting.record_consent`.
+`meeting.start_session`, `meeting.stop_session`, `meeting.get_live_state`, `meeting.get_recent_context`, `meeting.search_transcript`, `meeting.list_speakers`, `meeting.assign_speaker`, `meeting.update_participant`, `meeting.create_claim`, `meeting.update_claim`, `meeting.compare_claim`, `meeting.record_commitment`, `meeting.record_decision`, `meeting.record_question`, `meeting.publish_finding`, `meeting.push_private_alert`, `meeting.speak_private`, `meeting.set_mode`, `meeting.set_language`, `meeting.set_alert_threshold`, `meeting.set_pre_meeting_context`, `meeting.start_research`, `meeting.complete_research`, `meeting.export_package`, `meeting.list_sessions`, `meeting.search_sessions`, `meeting.delete_session`, `meeting.record_consent`, `meeting.delete_biometrics`.
 
 ## Transport rules
 

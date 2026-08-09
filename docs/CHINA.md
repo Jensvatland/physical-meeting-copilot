@@ -14,11 +14,19 @@ China is a **first-class** profile, not a fork.
 | Concern | Candidate | Status |
 |---------|-----------|--------|
 | Realtime transport | Self-hosted LiveKit / WebSocket slice | WebSocket done; LiveKit stub |
-| ASR | FunASR / SenseVoice | FunASR stub + sim ASR |
+| ASR | FunASR / SenseVoice | Env-selectable FunASR stub + default sim ASR |
 | Diarization | 3D-Speaker (and/or local pyannote where license OK) | Sim diarization |
 | LLM / translation assist | Qwen-compatible OpenAI-style endpoints | Glossary sim |
 | TTS (private alerts) | Local / China-region TTS adapter | Sim TTS lifecycle |
-| Compose | `docker-compose.china.yml` | **done** |
+| Compose | `docker-compose.china.yml` | Present (profile/env only until models wire up) |
+
+## Env notes (today)
+
+- `MEETING_PROFILE=china` labels the deployment profile in `/health`.
+- `MEETING_ASR=sim` (default) keeps the simulated ASR demo path.
+- `FUNASR_ENABLED=1` or `MEETING_ASR=funasr` selects `FunASRSpeechRecognitionAdapter`.
+- That adapter is still a **stub**: health is degraded and `transcribe_stream` raises `NotImplementedError` until SenseVoice/FunASR is wired.
+- For demos, leave `FUNASR_ENABLED=0` and `MEETING_ASR=sim`.
 
 ## Rules
 
@@ -30,3 +38,4 @@ China is a **first-class** profile, not a fork.
 ## Acceptance (Phase 11)
 
 A Mandarin workflow completes without OpenAI: capture → transcript (Chinese text) → translation → MCP state visible to an agent host.
+*(Today this path works via simulated ASR text, not FunASR.)*
